@@ -58,7 +58,6 @@ const Home: React.FC = () => {
             </h1>
             <p className="text-lg md:text-xl text-gray-100 mb-8 leading-relaxed drop-shadow-lg max-w-xl font-medium">
               Premium Car Accessories • Style • Performance <br/>
-              <span className="text-sm text-gray-300">Elevate your drive with our exclusive collection.</span>
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 justify-center md:justify-start">
               <Link to="/shop" className="px-8 py-4 bg-secondary text-black rounded-lg font-bold hover:bg-yellow-300 transition-all flex items-center justify-center shadow-lg hover:scale-105 transform duration-200">
