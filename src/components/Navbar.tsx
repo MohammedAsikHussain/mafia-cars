@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, Search, User, Menu, X, Camera, Mail, Lock, KeyRound, ArrowRight, Phone } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { analyzeImageForSearch } from '../services/geminiService';
+import { api } from '../services/apiclient'; // Import Real API
 
 // --- Login Modal Component ---
 interface LoginModalProps {
@@ -11,9 +12,6 @@ interface LoginModalProps {
   onLoginSuccess: (name: string) => void;
   initialView?: 'login' | 'signup';
 }
-
-// Mock database of existing users to demonstrate the "Already registered" check
-const MOCK_EXISTING_USERS = ['user@example.com', 'test@test.com', 'admin@example.com', '9876543210'];
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess, initialView = 'login' }) => {
   const [view, setView] = useState<'login' | 'signup' | 'forgot-email' | 'forgot-otp' | 'forgot-new-password'>('login');
@@ -52,25 +50,38 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
 
   if (!isOpen) return null;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  // --- REAL LOGIN LOGIC ---
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier || !password) {
       setErrorMessage("Please fill in all fields");
       return;
     }
-    // Simulate API Call
+    
     setIsLoading(true);
     setErrorMessage('');
-    setTimeout(() => {
-      setIsLoading(false);
-      // Mock successful login
-      const name = identifier.includes('@') ? identifier.split('@')[0] : "Customer";
-      onLoginSuccess(name);
+
+    try {
+      // Call Supabase API
+      const response = await api.auth.login({ 
+        identifier: identifier, 
+        password: password 
+      });
+      
+      // If successful
+      onLoginSuccess(response.user.name || 'Customer');
       onClose();
-    }, 1000);
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      // Show actual error from database (e.g., "Invalid login credentials")
+      setErrorMessage(error.message || "Invalid email or password");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  // --- REAL SIGNUP LOGIC ---
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -84,25 +95,37 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
       return;
     }
 
-    // Check if already registered (Mock Check)
-    if (MOCK_EXISTING_USERS.includes(signupEmail)) {
-      setErrorMessage("Already registered — please login");
+    if (signupPassword.length < 6) {
+      setErrorMessage("Password must be at least 6 characters");
       return;
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      // Success flow
-      onLoginSuccess(signupName);
+
+    try {
+      // Call Supabase API
+      const response = await api.auth.register({
+        email: signupEmail,
+        password: signupPassword,
+        name: signupName
+      });
+
+      // If successful
+      onLoginSuccess(response.user.name);
       onClose();
-    }, 1500);
+    } catch (error: any) {
+      console.error("Signup Error:", error);
+      setErrorMessage(error.message || "Registration failed. Email might already exist.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // --- MOCK FORGOT PASSWORD (Supabase Reset is complex, keeping mock for demo) ---
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier) {
-      setErrorMessage("Please enter your email or phone number");
+      setErrorMessage("Please enter your email");
       return;
     }
     setIsLoading(true);
@@ -116,7 +139,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
 
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp !== '1234') { // Mock OTP validation
+    if (otp !== '1234') { 
       setErrorMessage("Invalid OTP. Try 1234.");
       return;
     }
@@ -166,7 +189,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
             <p className="text-sm text-gray-500 mt-2">
               {view === 'login' && 'Enter your details to access your account'}
               {view === 'signup' && 'Join us to get exclusive offers and tracking'}
-              {view === 'forgot-email' && 'Enter your email or phone to receive an OTP'}
+              {view === 'forgot-email' && 'Enter your email to receive an OTP'}
               {view === 'forgot-otp' && `Enter the code sent to ${identifier}`}
               {view === 'forgot-new-password' && 'Create a new secure password'}
             </p>
@@ -182,15 +205,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
           {view === 'login' && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Email or Phone</label>
+                <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                   <input 
-                    type="text" 
+                    type="email" // Enforce Email Format
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                     placeholder="user@example.com"
+                    required
                   />
                 </div>
               </div>
@@ -205,6 +229,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                     placeholder="••••••••"
+                    required
                   />
                 </div>
               </div>
@@ -224,7 +249,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
                 disabled={isLoading}
                 className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg flex items-center justify-center"
               >
-                {isLoading ? 'Signing In...' : 'Login'}
+                {isLoading ? 'Verifying...' : 'Login'}
               </button>
 
               <div className="text-center mt-4">
@@ -255,20 +280,22 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
                     onChange={(e) => setSignupName(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                     placeholder="John Doe"
+                    required
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Email or Phone</label>
+                <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                   <input 
-                    type="text" 
+                    type="email" // Enforce Email Format
                     value={signupEmail}
                     onChange={(e) => setSignupEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                     placeholder="user@example.com"
+                    required
                   />
                 </div>
               </div>
@@ -282,7 +309,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
-                    placeholder="Create password"
+                    placeholder="Create password (min 6 chars)"
+                    required
                   />
                 </div>
               </div>
@@ -297,6 +325,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
                     onChange={(e) => setSignupConfirmPassword(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                     placeholder="Confirm password"
+                    required
                   />
                 </div>
               </div>
@@ -328,15 +357,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
           {view === 'forgot-email' && (
             <form onSubmit={handleSendOtp} className="space-y-4">
                <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Email or Phone</label>
+                <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                   <input 
-                    type="text" 
+                    type="email" // Enforce email format
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                     placeholder="user@example.com"
+                    required
                   />
                 </div>
               </div>
@@ -449,12 +479,12 @@ const Navbar: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isHome = location.pathname === '/';
   // Check if we are on the profile page
   const isProfile = location.pathname === '/profile';
-  // Check if we are on the shop page (NEW)
+  // Check if we are on the shop page
   const isShop = location.pathname === '/shop';
 
   // Dynamic Styles based on page
