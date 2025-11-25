@@ -1,0 +1,8 @@
+{
+  "name": "Mafia cars",
+  "description": "Next-gen e-commerce platform powered by Gemini AI for personalized shopping, visual search, and smart recommendations.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
