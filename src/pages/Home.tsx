@@ -17,14 +17,14 @@ const Home: React.FC = () => {
       <style>{`
         @keyframes panMobile {
           0% { object-position: 50% 50%; }   /* Start at Center */
-          25% { object-position: 10% 50%; }  /* Move to Left */
-          75% { object-position: 90% 50%; }  /* Move to Right */
+          25% { object-position: 40% 50%; }  /* Move to Left */
+          75% { object-position: 60% 50%; }  /* Move to Right */
           100% { object-position: 50% 50%; } /* Return to Center */
         }
 
         .mobile-pan-effect {
           /* Apply animation only if screen is smaller than 768px (Mobile) */
-          animation: panMobile 20s ease-in-out infinite;
+          animation: panMobile 35s ease-in-out infinite;
         }
 
         /* On Laptop/Desktop (md and up), stop animation and stay centered */
