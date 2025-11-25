@@ -13,15 +13,38 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section - Single Static Image */}
+      {/* Define Custom Animation Styles */}
+      <style>{`
+        @keyframes panMobile {
+          0% { object-position: 50% 50%; }   /* Start at Center */
+          25% { object-position: 10% 50%; }  /* Move to Left */
+          75% { object-position: 90% 50%; }  /* Move to Right */
+          100% { object-position: 50% 50%; } /* Return to Center */
+        }
+
+        .mobile-pan-effect {
+          /* Apply animation only if screen is smaller than 768px (Mobile) */
+          animation: panMobile 20s ease-in-out infinite;
+        }
+
+        /* On Laptop/Desktop (md and up), stop animation and stay centered */
+        @media (min-width: 768px) {
+          .mobile-pan-effect {
+            animation: none;
+            object-position: 50% 50%;
+          }
+        }
+      `}</style>
+
+      {/* Hero Section */}
       <section className="relative bg-black text-white overflow-hidden min-h-[600px] h-screen max-h-[800px]">
         
         <div className="absolute inset-0">
-          {/* Single Image: Reverted to object-cover (original look) */}
+          {/* Single Image with Mobile Animation */}
           <img 
             src="https://raw.githubusercontent.com/MohammedAsikHussain/MafiaCars/main/dodge_challenger_srt_4k-HD.jpg" 
             alt="Dodge Challenger" 
-            className="w-full h-full object-cover opacity-60 object-center"
+            className="w-full h-full object-cover opacity-60 mobile-pan-effect"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
         </div>
