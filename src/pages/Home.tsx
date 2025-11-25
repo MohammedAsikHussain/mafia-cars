@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles, TrendingUp, ShieldCheck } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { useShop } from '../context/ShopContext';
 
+// Using the Raw GitHub links to ensure images load correctly
 const HERO_IMAGES = [
   "https://raw.githubusercontent.com/MohammedAsikHussain/MafiaCars/main/reddodge.jpg",
   "https://raw.githubusercontent.com/MohammedAsikHussain/MafiaCars/main/1694437-1920x1080-desktop-1080p-dodge-background-photo%20(1).jpg",
@@ -33,7 +34,7 @@ const Home: React.FC = () => {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative bg-gray-900 text-white overflow-hidden h-[80vh] min-h-[500px] md:h-screen md:max-h-[800px]">
+      <section className="relative bg-black text-white overflow-hidden h-[60vh] sm:h-[70vh] md:h-screen max-h-[800px] flex items-center justify-center">
         
         {/* Slideshow */}
         <div className="absolute inset-0 z-0">
@@ -44,26 +45,28 @@ const Home: React.FC = () => {
                 index === currentImageIndex ? 'opacity-100' : 'opacity-0'
               }`}
             >
+              {/* UPDATED: object-contain ensures the FULL image is seen without cropping */}
               <img 
                 src={img} 
                 alt={`Car Slideshow ${index}`} 
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-contain object-center bg-black"
               />
-              <div className="absolute inset-0 bg-black/40"></div>
+              {/* Dark Overlay - Adjusted to be lighter since background is black */}
+              <div className="absolute inset-0 bg-black/30"></div>
             </div>
           ))}
         </div>
         
-        {/* Text Content - Responsive Sizing */}
-        <div className="container mx-auto px-6 md:px-20 relative z-10 h-full flex flex-col justify-center pt-10 md:pt-20">
-          <div className="max-w-3xl">
+        {/* Text Content - Positioned absolutely to overlay the image properly */}
+        <div className="container mx-auto px-6 md:px-20 relative z-10 flex flex-col justify-center h-full pointer-events-none">
+          <div className="max-w-3xl mt-20 md:mt-0 pointer-events-auto">
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 leading-tight drop-shadow-2xl">
               <span className="text-secondary font-ethnocentric tracking-widest block mb-2">Mc Accessories</span>
               <span className="text-white font-bankGothic text-xl sm:text-2xl md:text-4xl uppercase tracking-wider">Make Them Stare</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-gray-100 mb-6 md:mb-8 leading-relaxed drop-shadow-lg max-w-xl font-medium">
+            <p className="text-sm sm:text-lg md:text-xl text-gray-200 mb-6 md:mb-8 leading-relaxed drop-shadow-lg max-w-xl font-medium">
               Premium Car Accessories • Style • Performance <br/>
-              <span className="text-xs sm:text-sm text-gray-300 hidden sm:inline">Elevate your drive with our exclusive collection.</span>
+              <span className="hidden sm:inline text-gray-400">Elevate your drive with our exclusive collection.</span>
             </p>
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 justify-start">
               <Link to="/shop" className="px-6 py-3 md:px-8 md:py-4 bg-secondary text-black rounded-lg font-bold hover:bg-yellow-300 transition-all flex items-center justify-center shadow-lg hover:scale-105 transform duration-200 text-sm md:text-base">
