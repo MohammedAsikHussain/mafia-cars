@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CartItem, Product, User } from '../types';
-import { api } from '../services/apiclient.tsx';
+import { api } from '../services/apiclient';
 
 interface ShopContextType {
   cart: CartItem[];
@@ -10,7 +10,8 @@ interface ShopContextType {
   clearCart: () => void;
   cartTotal: number;
   user: User | null;
-  login: (role: 'admin' | 'customer', customName?: string) => void;
+  // UPDATED: Login now accepts email
+  login: (role: 'admin' | 'customer', customName?: string, customEmail?: string) => void;
   logout: () => void;
   updateUserProfile: (name: string) => void;
   products: Product[];
@@ -26,7 +27,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
 
-  // Load Products Only (Categories are now hardcoded in the Shop page)
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -60,12 +60,13 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = () => setCart([]);
   const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
-  const login = async (role: 'admin' | 'customer', customName?: string) => {
+  // UPDATED: Login function now saves the real email
+  const login = async (role: 'admin' | 'customer', customName?: string, customEmail?: string) => {
     setUser({
-      id: 'u123',
+      id: 'u123', // In a full app, this comes from Supabase
       name: customName || (role === 'admin' ? 'Admin User' : 'Customer'),
       role: role,
-      email: role === 'admin' ? 'admin@mafiacars.com' : 'user@example.com'
+      email: customEmail || (role === 'admin' ? 'admin@mafiacars.com' : 'user@example.com')
     });
   };
 
