@@ -44,9 +44,14 @@ const ProductDetails: React.FC = () => {
       return;
     }
     setCheckoutStep('gateway');
+    
+    // Format the address into a single string
+    const fullAddressString = `${shippingAddress.address}, ${shippingAddress.city} - ${shippingAddress.zip}. Phone: ${shippingAddress.phone}`;
+
     try {
         const newOrder = await api.orders.create({
-            customerName: shippingAddress.fullName, // SENDING THE NAME TO DATABASE
+            customerName: shippingAddress.fullName,
+            address: fullAddressString, // SENDING ADDRESS
             total: product.price,
             items: [{ id: product.id, name: product.name, price: product.price, quantity: 1, image: product.image }],
         });

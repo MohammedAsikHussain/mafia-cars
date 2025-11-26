@@ -85,10 +85,11 @@ export const api = {
   // ORDERS
   orders: {
     create: async (orderData: any): Promise<Order> => {
-      // UPDATED: Now saving customer_name
+      // UPDATED: Saving shipping_address now
       const { data, error } = await supabase.from('orders').insert([{
-          user_email: 'guest@example.com', // Fallback for internal tracking
-          customer_name: orderData.customerName, // <--- NEW FIELD
+          user_email: 'guest@example.com', 
+          customer_name: orderData.customerName,
+          shipping_address: orderData.address, // <--- NEW FIELD
           total: orderData.total,
           items: orderData.items,
           status: 'Processing'
