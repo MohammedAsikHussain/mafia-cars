@@ -88,12 +88,12 @@ export const api = {
       // Create text summary
       const summaryText = orderData.items.map((i: any) => `${i.quantity || 1}x ${i.name}`).join(', ');
 
-      // UPDATED: Saving phone_number now
       const { data, error } = await supabase.from('orders').insert([{
-          user_email: 'guest@example.com',
+          user_email: orderData.userEmail || 'guest@example.com', // UPDATED: Uses real email
           customer_name: orderData.customerName,
-          phone_number: orderData.phoneNumber, // <--- NEW FIELD
+          phone_number: orderData.phoneNumber, 
           shipping_address: orderData.address,
+          quantity: orderData.totalQuantity, // UPDATED: Saves quantity to DB
           total: orderData.total,
           product_summary: summaryText,
           status: 'Processing'
