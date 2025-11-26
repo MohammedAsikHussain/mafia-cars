@@ -5,7 +5,7 @@ import { useShop } from '../context/ShopContext';
 import { generateProductDescription } from '../services/geminiService';
 import { api } from '../services/apiclient'; 
 import { Product } from '../types';
-import { CATEGORIES } from '../services/mockData';
+import { CATEGORIES } from '../services/mockData'; // Still useful for the dropdown list
 
 const AdminDashboard: React.FC = () => {
   const { user, products, addProduct, updateProduct, deleteProduct } = useShop();
@@ -65,9 +65,25 @@ const AdminDashboard: React.FC = () => {
     setIsGenerating(false);
   };
 
-  const handleEditClick = (product: Product) => { setEditingId(product.id); setNewProduct({ ...product }); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const handleDeleteClick = (id: string) => { if (window.confirm("Are you sure?")) { deleteProduct(id); if (editingId === id) resetForm(); } };
-  const resetForm = () => { setEditingId(null); setNewProduct({ name: '', price: 0, category: 'Electronics', description: '', image: '', tags: [], isUpcoming: false, isOutOfStock: false }); setKeywords(''); };
+  const handleEditClick = (product: Product) => { 
+      setEditingId(product.id); 
+      setNewProduct({ ...product }); 
+      window.scrollTo({ top: 0, behavior: 'smooth' }); 
+  };
+  
+  const handleDeleteClick = (id: string) => { 
+      if (window.confirm("Are you sure you want to delete this product?")) { 
+          deleteProduct(id); 
+          if (editingId === id) resetForm(); 
+      } 
+  };
+  
+  const resetForm = () => { 
+      setEditingId(null); 
+      setNewProduct({ name: '', price: 0, category: 'Electronics', description: '', image: '', tags: [], isUpcoming: false, isOutOfStock: false }); 
+      setKeywords(''); 
+  };
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) { updateProduct({ ...newProduct as Product, id: editingId }); alert("Updated!"); }
@@ -110,8 +126,9 @@ const AdminDashboard: React.FC = () => {
 
       <div className="container mx-auto px-4 py-8">
         {activeTab === 'products' && (
-            <div className="lg:col-span-2">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* LEFT SIDE: FORM */}
+                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
                     <h2 className="text-lg font-bold mb-4">{editingId ? 'Edit' : 'Add'} Product</h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -128,17 +145,58 @@ const AdminDashboard: React.FC = () => {
                         <div className="flex space-x-6">
                             <div className="flex items-center">
                                 <input type="checkbox" id="isUpcoming" checked={newProduct.isUpcoming || false} onChange={(e) => setNewProduct({...newProduct, isUpcoming: e.target.checked})} className="w-4 h-4 text-primary rounded focus:ring-primary" />
-                                <label htmlFor="isUpcoming" className="ml-2 text-sm font-medium text-gray-900">Upcoming Product</label>
+                                <label htmlFor="isUpcoming" className="ml-2 text-sm font-medium text-gray-900">Upcoming</label>
                             </div>
-                            {/* NEW OUT OF STOCK TOGGLE */}
                             <div className="flex items-center">
                                 <input type="checkbox" id="isOutOfStock" checked={newProduct.isOutOfStock || false} onChange={(e) => setNewProduct({...newProduct, isOutOfStock: e.target.checked})} className="w-4 h-4 text-red-600 rounded focus:ring-red-500" />
-                                <label htmlFor="isOutOfStock" className="ml-2 text-sm font-bold text-red-600">Out of Stock</label>
+                                <label htmlFor="isOutOfStock" className="ml-2 text-sm font-bold text-red-600">Stock Out</label>
                             </div>
                         </div>
 
                         <button type="submit" className="w-full bg-black text-white py-3 rounded font-bold">{editingId?'Update':'Add'}</button>
                     </form>
+                </div>
+
+                {/* RIGHT SIDE: EXISTING PRODUCTS LIST */}
+                <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden max-h-[800px] overflow-y-auto">
+                  <div className="p-4 border-b border-gray-100 bg-gray-50">
+                      <h3 className="font-bold text-gray-900">Existing Products</h3>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {products.length === 0 ? (
+                        <div className="p-8 text-center text-gray-500">No products found.</div>
+                    ) : (
+                        products.map(product => (
+                            <div key={product.id} className={`p-4 flex items-center transition-colors hover:bg-gray-50 ${editingId === product.id ? 'bg-yellow-50' : ''}`}>
+                                <img src={product.image} alt="" className="w-12 h-12 rounded-md object-cover mr-3 border border-gray-200" />
+                                <div className="flex-1 min-w-0 mr-2">
+                                    <h4 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h4>
+                                    <div className="flex items-center text-xs text-gray-500">
+                                      <span className="mr-2">₹{product.price}</span>
+                                      {product.isUpcoming && <span className="text-blue-600 font-bold bg-blue-50 px-1 rounded">New</span>}
+                                      {product.isOutOfStock && <span className="text-red-600 font-bold bg-red-50 px-1 rounded ml-1">Out</span>}
+                                    </div>
+                                </div>
+                                <div className="flex space-x-1">
+                                    <button 
+                                        onClick={() => handleEditClick(product)}
+                                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                                        title="Edit"
+                                    >
+                                        <Pencil className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeleteClick(product.id)}
+                                        className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                  </div>
                 </div>
             </div>
         )}

@@ -1,117 +1,211 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { CartItem, Product, User } from '../types';
-import { api } from '../services/apiclient';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ChevronDown, ArrowLeft, Settings, Lightbulb, Smartphone, CircleDashed, SprayCan, Wind, Radio, Copy, Armchair, Footprints, Tag } from 'lucide-react';
+import ProductCard from '../components/ProductCard';
+import { useShop } from '../context/ShopContext';
+import { SortOption } from '../types';
+import { api } from '../services/apiclient'; // Import API
 
-interface ShopContextType {
-  cart: CartItem[];
-  // UPDATED: addToCart now accepts a quantity (count)
-  addToCart: (product: Product, count?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
-  cartTotal: number;
-  user: User | null;
-  login: (role: 'admin' | 'customer', customName?: string, customEmail?: string) => void;
-  logout: () => void;
-  updateUserProfile: (name: string) => void;
-  products: Product[];
-  addProduct: (product: Product) => void;
-  updateProduct: (product: Product) => void;
-  deleteProduct: (id: string) => void;
-}
+const Shop: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { products } = useShop();
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [sortOption, setSortOption] = useState<SortOption>(SortOption.Relevance);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // NEW: State to hold real categories from database
+  const [dbCategories, setDbCategories] = useState<string[]>(['All']);
 
-const ShopContext = createContext<ShopContextType | undefined>(undefined);
-
-export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [user, setUser] = useState<User | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-
+  // NEW: Fetch categories from Supabase
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchCategories = async () => {
       try {
-        const data = await api.products.getAll();
-        setProducts(data || []);
-      } catch (err) {
-        console.error("Failed to fetch products:", err);
-        setProducts([]);
+        const cats = await api.categories.getAll();
+        if (cats.length > 0) {
+            setDbCategories(cats);
+        }
+      } catch (error) {
+        console.error("Failed to load categories", error);
       }
     };
-    fetchProducts();
+    fetchCategories();
   }, []);
-
-  // UPDATED: Handles adding specific quantity
-  const addToCart = (product: Product, count: number = 1) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        return prev.map((item) => 
-          item.id === product.id ? { ...item, quantity: item.quantity + count } : item
-        );
-      }
-      return [...prev, { ...product, quantity: count }];
-    });
-  };
-
-  const removeFromCart = (productId: string) => setCart((prev) => prev.filter((item) => item.id !== productId));
-
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity < 1) return;
-    setCart((prev) => prev.map((item) => (item.id === productId ? { ...item, quantity } : item)));
-  };
-
-  const clearCart = () => setCart([]);
-  const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
-
-  const login = async (role: 'admin' | 'customer', customName?: string, customEmail?: string) => {
-    setUser({
-      id: 'u123',
-      name: customName || (role === 'admin' ? 'Admin User' : 'Customer'),
-      role: role,
-      email: customEmail || (role === 'admin' ? 'admin@mafiacars.com' : 'user@example.com')
-    });
-  };
-
-  const logout = () => setUser(null);
-  const updateUserProfile = (name: string) => setUser((prev) => (prev ? { ...prev, name } : null));
-
-  const addProduct = async (product: Product) => {
-    try {
-      const newProduct = await api.products.create(product);
-      setProducts((prev) => [...prev, newProduct]);
-    } catch (error) {
-      console.error("Failed to add product", error);
-      alert("Failed to save to database.");
+  
+  // Parse query params for search
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const search = params.get('search');
+    if (search) {
+        if (dbCategories.includes(search)) {
+            setSelectedCategory(search);
+            setSearchQuery('');
+        } else {
+            setSearchQuery(search);
+        }
+    } else {
+        setSearchQuery('');
     }
+  }, [location.search, dbCategories]);
+
+  // Helper to get icons (Mapping names to icons)
+  const getIcon = (name: string) => {
+    const icons: {[key: string]: JSX.Element} = {
+        'Gear Knobs': <Settings className="w-6 h-6" />,
+        'DRL Lights': <Lightbulb className="w-6 h-6" />,
+        'Mobile Holders': <Smartphone className="w-6 h-6" />,
+        'Steerings': <CircleDashed className="w-6 h-6" />,
+        'Dashboard Wax': <SprayCan className="w-6 h-6" />,
+        'Dashboard Perfumes': <Wind className="w-6 h-6" />,
+        'Car Antennas': <Radio className="w-6 h-6" />,
+        'Mirror Covers': <Copy className="w-6 h-6" />,
+        'Armrest': <Armchair className="w-6 h-6" />,
+        'Pedal Covers': <Footprints className="w-6 h-6" />
+    };
+    return icons[name] || <Tag className="w-6 h-6" />;
   };
 
-  const updateProduct = async (updatedProduct: Product) => {
-    try {
-      await api.products.update(updatedProduct.id, updatedProduct);
-      setProducts((prev) => prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)));
-    } catch (error) { console.error(error); }
-  };
+  const filteredProducts = useMemo(() => {
+    let result = [...products];
 
-  const deleteProduct = async (id: string) => {
-    try {
-      await api.products.delete(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-    } catch (error) { console.error(error); }
-  };
+    // Filter by Search
+    if (searchQuery) {
+      const lowerQ = searchQuery.toLowerCase();
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(lowerQ) || 
+        p.tags.some(t => t.toLowerCase().includes(lowerQ))
+      );
+    }
+
+    // Filter by Category
+    if (selectedCategory !== "All") {
+      result = result.filter(p => p.category === selectedCategory);
+    }
+
+    // Sort
+    switch (sortOption) {
+      case SortOption.PriceLowHigh:
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case SortOption.PriceHighLow:
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case SortOption.Newest:
+        // Sort by ID as proxy for newest (assuming larger ID is newer or using numeric/uuid logic)
+        // Better to use created_at if available, but this works for now
+        result.sort((a, b) => (a.id > b.id ? -1 : 1));
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [selectedCategory, sortOption, searchQuery, products]);
 
   return (
-    <ShopContext.Provider value={{
-        cart, addToCart, removeFromCart, updateQuantity, clearCart, cartTotal,
-        user, login, logout, updateUserProfile,
-        products, addProduct, updateProduct, deleteProduct
-      }}>
-      {children}
-    </ShopContext.Provider>
+    <div className="bg-gray-50 min-h-screen pb-20">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="container mx-auto px-4 py-8">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="inline-flex items-center text-black hover:text-secondary font-medium mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Shop All Products</h1>
+          <p className="text-gray-600 mb-8">
+            {searchQuery 
+              ? `Results for "${searchQuery}"` 
+              : "Explore our premium collection"}
+          </p>
+
+          {/* --- Shop by Category (Using DB List) --- */}
+          <div className="pb-4 overflow-x-auto scrollbar-hide">
+            <div className="flex flex-wrap gap-4">
+               {/* 'All' button */}
+               <button 
+                onClick={() => setSelectedCategory("All")}
+                className={`flex items-center space-x-2 px-5 py-3 rounded-full shadow-sm border transition-all group ${selectedCategory === "All" ? 'bg-secondary border-secondary' : 'bg-white border-gray-200 hover:border-secondary'}`}
+              >
+                <span className={`font-medium whitespace-nowrap ${selectedCategory === "All" ? 'text-black' : 'text-gray-700'}`}>
+                  All Items
+                </span>
+              </button>
+
+              {/* Map over DATABASE Categories (dbCategories) */}
+              {dbCategories.filter(c => c !== 'All').map((cat) => (
+                <button 
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`flex items-center space-x-2 px-5 py-3 rounded-full shadow-sm border transition-all group ${selectedCategory === cat ? 'bg-secondary border-secondary' : 'bg-white border-gray-200 hover:border-secondary'}`}
+                >
+                  <span className={`${selectedCategory === cat ? 'text-black' : 'text-gray-500 group-hover:text-secondary'} transition-colors`}>
+                    {getIcon(cat)}
+                  </span>
+                  <span className={`font-medium whitespace-nowrap ${selectedCategory === cat ? 'text-black' : 'text-gray-700'}`}>
+                    {cat}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* --- END Category Section --- */}
+
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        {/* No Sidebar - Full Width Content */}
+        <div className="w-full">
+            {/* Toolbar */}
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-gray-500 text-sm font-medium">
+                Found {filteredProducts.length} results
+              </span>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Sort by:</span>
+                <div className="relative">
+                  <select 
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value as SortOption)}
+                    className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-8 rounded-lg text-sm focus:outline-none focus:border-primary cursor-pointer shadow-sm"
+                  >
+                    <option value={SortOption.Relevance}>Relevance</option>
+                    <option value={SortOption.PriceLowHigh}>Price: Low to High</option>
+                    <option value={SortOption.PriceHighLow}>Price: High to Low</option>
+                    <option value={SortOption.Newest}>Newest Arrivals</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-gray-500 absolute right-2 top-2.5 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Grid */}
+            {filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {filteredProducts.map(product => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl p-12 text-center border border-gray-100 shadow-sm">
+                <p className="text-xl text-gray-600 font-medium mb-2">No products found</p>
+                <p className="text-gray-400">Try adjusting your search or filters.</p>
+                <button 
+                  onClick={() => {setSearchQuery(''); setSelectedCategory('All');}}
+                  className="mt-6 px-6 py-2 bg-primary text-white rounded-lg hover:bg-indigo-600 transition"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+        </div>
+      </div>
+    </div>
   );
 };
 
-export const useShop = () => {
-  const context = useContext(ShopContext);
-  if (!context) throw new Error('useShop must be used within a ShopProvider');
-  return context;
-};
+export default Shop;
