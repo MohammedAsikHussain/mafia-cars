@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Star, ShoppingCart, ArrowLeft, Truck, CreditCard, Wallet, Banknote, X, CheckCircle, MapPin, ChevronRight } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
-import { api } from '../services/apiclient.tsx';
+import { api } from '../services/apiclient';
 
 const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,13 +39,14 @@ const ProductDetails: React.FC = () => {
 
   const handleAddressSubmitNext = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!shippingAddress.address || !shippingAddress.phone || !shippingAddress.zip) {
+    if (!shippingAddress.address || !shippingAddress.phone || !shippingAddress.zip || !shippingAddress.fullName) {
       alert("Please fill in all required fields.");
       return;
     }
     setCheckoutStep('gateway');
     try {
         const newOrder = await api.orders.create({
+            customerName: shippingAddress.fullName, // SENDING THE NAME TO DATABASE
             total: product.price,
             items: [{ id: product.id, name: product.name, price: product.price, quantity: 1, image: product.image }],
         });
@@ -71,12 +72,10 @@ const ProductDetails: React.FC = () => {
 
         <div className="bg-white rounded-2xl shadow-sm border border-secondary overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2">
-            {/* Image Section: Full width on mobile */}
             <div className="h-64 sm:h-80 md:h-auto bg-gray-100 relative">
               <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
             </div>
 
-            {/* Content Section */}
             <div className="p-6 md:p-12 flex flex-col justify-center">
               <div className="uppercase tracking-wide text-xs md:text-sm text-primary font-bold mb-2">{product.category}</div>
               <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">{product.name}</h1>
@@ -121,20 +120,36 @@ const ProductDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* Modals remain mostly standard, just ensuring sizing */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl scale-100 flex flex-col max-h-[90vh]">
-            {/* Modal content logic essentially same as before, responsiveness is handled by max-w-md and flex layouts inside */}
             {checkoutStep !== 'success' && checkoutStep !== 'gateway' && (
               <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="font-bold text-lg text-gray-900">Checkout</h3>
                 <button onClick={() => setShowPaymentModal(false)}><X className="w-6 h-6 text-gray-400" /></button>
               </div>
             )}
-            {/* ... (Rest of payment modal logic) ... */}
             {checkoutStep === 'payment' && (
-                <div className="p-6"><button onClick={handlePaymentSelectNext} className="w-full bg-black text-white py-3 rounded-xl">Next</button></div>
+              <>
+                <div className="p-6 space-y-4 overflow-y-auto">
+                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${selectedPayment === 'upi' ? 'border-secondary bg-yellow-50 ring-1 ring-secondary' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setSelectedPayment('upi')}>
+                    <div className="w-5 h-5 rounded-full border border-gray-400 mr-4 flex items-center justify-center">{selectedPayment === 'upi' && <div className="w-3 h-3 bg-secondary rounded-full" />}</div>
+                    <div className="flex-1"><div className="font-bold text-gray-900">UPI / GPay / PhonePe</div><div className="text-xs text-gray-500">Pay securely via your preferred UPI app</div></div>
+                  </label>
+                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${selectedPayment === 'card' ? 'border-secondary bg-yellow-50 ring-1 ring-secondary' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setSelectedPayment('card')}>
+                    <div className="w-5 h-5 rounded-full border border-gray-400 mr-4 flex items-center justify-center">{selectedPayment === 'card' && <div className="w-3 h-3 bg-secondary rounded-full" />}</div>
+                    <div className="flex-1"><div className="font-bold text-gray-900">Credit / Debit Card</div><div className="text-xs text-gray-500">Visa, Mastercard, RuPay</div></div><CreditCard className="w-5 h-5 text-gray-400" />
+                  </label>
+                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${selectedPayment === 'cod' ? 'border-secondary bg-yellow-50 ring-1 ring-secondary' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setSelectedPayment('cod')}>
+                    <div className="w-5 h-5 rounded-full border border-gray-400 mr-4 flex items-center justify-center">{selectedPayment === 'cod' && <div className="w-3 h-3 bg-secondary rounded-full" />}</div>
+                    <div className="flex-1"><div className="font-bold text-gray-900">Cash on Delivery</div><div className="text-xs text-gray-500">Pay when you receive the order</div></div><Banknote className="w-5 h-5 text-gray-400" />
+                  </label>
+                </div>
+                <div className="p-6 bg-gray-50 border-t border-gray-100">
+                  <div className="flex justify-between items-center mb-4 text-sm"><span className="text-gray-600">Total Amount:</span><span className="text-xl font-bold text-gray-900">₹{product.price.toFixed(2)}</span></div>
+                  <button onClick={handlePaymentSelectNext} className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg flex items-center justify-center">Next Step <ChevronRight className="w-4 h-4 ml-1" /></button>
+                </div>
+              </>
             )}
             {checkoutStep === 'address' && (
                 <form onSubmit={handleAddressSubmitNext} className="p-6 flex flex-col gap-4">
