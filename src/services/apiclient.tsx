@@ -82,18 +82,20 @@ export const api = {
     }
   },
 
-  // ORDERS (Updated: No more JSON 'items')
+  // ORDERS
   orders: {
     create: async (orderData: any): Promise<Order> => {
-      // Create text summary (e.g., "1x Dodge Charger")
+      // Create text summary
       const summaryText = orderData.items.map((i: any) => `${i.quantity || 1}x ${i.name}`).join(', ');
 
+      // UPDATED: Saving phone_number now
       const { data, error } = await supabase.from('orders').insert([{
           user_email: 'guest@example.com',
           customer_name: orderData.customerName,
+          phone_number: orderData.phoneNumber, // <--- NEW FIELD
           shipping_address: orderData.address,
           total: orderData.total,
-          product_summary: summaryText, // Only saving Text now
+          product_summary: summaryText,
           status: 'Processing'
         }]).select().single();
       if (error) throw error;

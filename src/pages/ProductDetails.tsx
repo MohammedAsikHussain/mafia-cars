@@ -45,13 +45,14 @@ const ProductDetails: React.FC = () => {
     }
     setCheckoutStep('gateway');
     
-    // Format the address into a single string
-    const fullAddressString = `${shippingAddress.address}, ${shippingAddress.city} - ${shippingAddress.zip}. Phone: ${shippingAddress.phone}`;
+    // Format address
+    const fullAddressString = `${shippingAddress.address}, ${shippingAddress.city} - ${shippingAddress.zip}`;
 
     try {
         const newOrder = await api.orders.create({
             customerName: shippingAddress.fullName,
-            address: fullAddressString, // SENDING ADDRESS
+            phoneNumber: shippingAddress.phone, // SENDING PHONE NUMBER
+            address: fullAddressString,
             total: product.price,
             items: [{ id: product.id, name: product.name, price: product.price, quantity: 1, image: product.image }],
         });
