@@ -82,12 +82,10 @@ export const api = {
     }
   },
 
-  // ORDERS
+  // ORDERS (Updated: No more JSON 'items')
   orders: {
     create: async (orderData: any): Promise<Order> => {
-      
-      // Create a readable text summary from the items array
-      // Example: "1x Dodge Charger, 2x Wax"
+      // Create text summary (e.g., "1x Dodge Charger")
       const summaryText = orderData.items.map((i: any) => `${i.quantity || 1}x ${i.name}`).join(', ');
 
       const { data, error } = await supabase.from('orders').insert([{
@@ -95,8 +93,7 @@ export const api = {
           customer_name: orderData.customerName,
           shipping_address: orderData.address,
           total: orderData.total,
-          items: orderData.items, // Keep JSON for App logic
-          product_summary: summaryText, // Keep Text for Database Readability
+          product_summary: summaryText, // Only saving Text now
           status: 'Processing'
         }]).select().single();
       if (error) throw error;

@@ -37,13 +37,11 @@ const AdminDashboard: React.FC = () => {
         const data = await api.orders.getAllAdmin();
         const formattedOrders = data.map((order: any) => ({
             id: order.id, 
-            // SHOW CUSTOMER NAME OR FALLBACK
             customer: order.customer_name || order.user_email || 'Guest',
             date: new Date(order.created_at).toLocaleDateString(),
             total: order.total,
             status: order.status,
-            // EXTRACT PRODUCT NAME
-            productName: (Array.isArray(order.items) && order.items.length > 0) ? order.items[0].name : 'Unknown Item'
+            productName: order.product_summary || 'Unknown Items' // Use Summary Column
         }));
         formattedOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setOrders(formattedOrders);
@@ -82,7 +80,6 @@ const AdminDashboard: React.FC = () => {
     await api.orders.updateStatus(orderId, newStatus);
   };
 
-  // UPDATED STATUS COLORS
   const getStatusBadge = (status: string) => {
     switch (status) {
         case 'Delivered': return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" /> Delivered</span>;
@@ -110,10 +107,8 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Stats Cards omitted for brevity, they remain same */}
         
         {activeTab === 'products' && (
-            // ... Product Tab Content (Same as before) ...
             <div className="lg:col-span-2">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h2 className="text-lg font-bold mb-4">{editingId ? 'Edit' : 'Add'} Product</h2>
@@ -155,7 +150,6 @@ const AdminDashboard: React.FC = () => {
                       <tr className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold tracking-wider">
                         <th className="px-6 py-4">ID</th>
                         <th className="px-6 py-4">Customer</th>
-                        {/* NEW COLUMN */}
                         <th className="px-6 py-4">Product</th>
                         <th className="px-6 py-4">Total</th>
                         <th className="px-6 py-4">Status</th>
@@ -167,7 +161,6 @@ const AdminDashboard: React.FC = () => {
                         <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 font-medium text-gray-900">#{order.id.slice(0, 6).toUpperCase()}</td>
                           <td className="px-6 py-4 text-gray-700 font-bold">{order.customer}</td>
-                          {/* NEW COLUMN DATA */}
                           <td className="px-6 py-4 text-gray-600">{order.productName}</td>
                           <td className="px-6 py-4 font-bold text-gray-900">₹{order.total.toFixed(2)}</td>
                           <td className="px-6 py-4">{getStatusBadge(order.status)}</td>

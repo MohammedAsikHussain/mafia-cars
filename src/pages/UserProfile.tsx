@@ -14,7 +14,6 @@ const UserProfile: React.FC = () => {
   const [address, setAddress] = useState('123 Mafia Street, New York, NY');
   const [profilePic, setProfilePic] = useState<string | null>(null);
   
-  // State for REAL orders
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
 
@@ -22,26 +21,18 @@ const UserProfile: React.FC = () => {
     if (user) setName(user.name);
   }, [user]);
 
-  // Load REAL orders
   useEffect(() => {
     const fetchMyOrders = async () => {
         setIsLoadingOrders(true);
         try {
             const data = await api.orders.getMyOrders();
-            // In a real app, we would filter here by user ID or Email
-            // For this simplified backend, we show all orders if they belong to "Guest" or current user
-            // NOTE: Since we don't have advanced filtering in the simplified apiclient, 
-            // this will show all orders. In a production app, you'd filter:
-            // const myOrders = data.filter(o => o.user_email === user?.email);
-            // For now, we display data as received:
             const formatted = data.map((o: any) => ({
                 id: o.id,
                 date: new Date(o.created_at).toLocaleDateString(),
                 total: o.total,
                 status: o.status,
-                items: Array.isArray(o.items) ? o.items : []
+                summary: o.product_summary // Using Text Summary instead of Items JSON
             }));
-            // Sort newest first
             formatted.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
             setOrders(formatted);
         } catch (e) {
@@ -87,7 +78,6 @@ const UserProfile: React.FC = () => {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: User Info */}
             <div className="lg:col-span-1">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
                     <div className="bg-black h-24 relative">
@@ -112,10 +102,7 @@ const UserProfile: React.FC = () => {
                     </div>
                     <div className="pt-12 px-6 pb-6">
                         {isEditing ? (<div className="mb-1"><label className="text-xs text-gray-500 uppercase font-bold">Full Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full border-b-2 border-secondary focus:outline-none py-1 text-lg font-bold text-gray-900" /></div>) : (<h1 className="text-2xl font-bold text-gray-900">{name}</h1>)}
-                        
-                        {/* SHOW REAL EMAIL HERE */}
                         <p className="text-gray-500 text-sm mb-6">{user.email}</p>
-                        
                         <div className="space-y-4">
                             <div className="flex items-start text-gray-600">
                                 <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0 mt-1"><MapPin className="w-4 h-4" /></div>
@@ -129,14 +116,12 @@ const UserProfile: React.FC = () => {
                 </div>
             </div>
 
-            {/* Right Column: Order History */}
             <div className="lg:col-span-2">
                 <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center"><Package className="w-5 h-5 mr-2" /> Order History</h2>
                 
                 {isLoadingOrders ? (
                     <div className="text-center py-10 text-gray-500">Loading history...</div>
                 ) : orders.length === 0 ? (
-                    // --- NO ORDERS STATE ---
                     <div className="bg-white rounded-xl p-10 border border-dashed border-gray-300 flex flex-col items-center justify-center text-center">
                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
                             <ShoppingBag className="w-8 h-8" />
@@ -160,13 +145,10 @@ const UserProfile: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="p-4">
-                                    <div className="space-y-3">
-                                        {order.items.map((item: any, idx: number) => (
-                                            <div key={idx} className="flex items-center justify-between text-sm">
-                                                <div className="flex items-center text-gray-700"><div className="w-1.5 h-1.5 bg-gray-300 rounded-full mr-2"></div>{item.quantity || 1}x {item.name}</div>
-                                                <div className="text-gray-900 font-medium">₹{item.price.toFixed(2)}</div>
-                                            </div>
-                                        ))}
+                                    <div className="flex items-center text-gray-700">
+                                        {/* Show Text Summary instead of Items */}
+                                        <Package className="w-4 h-4 mr-2 text-gray-400" />
+                                        <span className="font-medium">{order.summary || 'Items'}</span>
                                     </div>
                                 </div>
                             </div>
