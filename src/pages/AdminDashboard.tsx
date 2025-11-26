@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus, Wand2, BarChart3, AlertCircle, ArrowLeft, TrendingUp, Search, Filter, MoreHorizontal, CheckCircle, Truck, Clock, Pencil, Trash2, X, RefreshCw } from 'lucide-react';
+import { Package, Plus, Wand2, AlertCircle, ArrowLeft, Search, Filter, MoreHorizontal, CheckCircle, Truck, Clock, Pencil, Trash2, X, RefreshCw } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { generateProductDescription } from '../services/geminiService';
 import { api } from '../services/apiclient'; 
@@ -18,7 +18,8 @@ const AdminDashboard: React.FC = () => {
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [newProduct, setNewProduct] = useState<Partial<Product>>({ name: '', price: 0, category: 'Electronics', description: '', image: '', tags: [], isUpcoming: false });
+  // Added isOutOfStock to state
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({ name: '', price: 0, category: 'Electronics', description: '', image: '', tags: [], isUpcoming: false, isOutOfStock: false });
   const [keywords, setKeywords] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -38,10 +39,11 @@ const AdminDashboard: React.FC = () => {
         const formattedOrders = data.map((order: any) => ({
             id: order.id, 
             customer: order.customer_name || order.user_email || 'Guest',
+            phone: order.phone_number || 'N/A',
             date: new Date(order.created_at).toLocaleDateString(),
             total: order.total,
             status: order.status,
-            productName: order.product_summary || 'Unknown Items' // Use Summary Column
+            productName: order.product_summary || 'Unknown Items'
         }));
         formattedOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setOrders(formattedOrders);
@@ -65,7 +67,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleEditClick = (product: Product) => { setEditingId(product.id); setNewProduct({ ...product }); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const handleDeleteClick = (id: string) => { if (window.confirm("Are you sure?")) { deleteProduct(id); if (editingId === id) resetForm(); } };
-  const resetForm = () => { setEditingId(null); setNewProduct({ name: '', price: 0, category: 'Electronics', description: '', image: '', tags: [], isUpcoming: false }); setKeywords(''); };
+  const resetForm = () => { setEditingId(null); setNewProduct({ name: '', price: 0, category: 'Electronics', description: '', image: '', tags: [], isUpcoming: false, isOutOfStock: false }); setKeywords(''); };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) { updateProduct({ ...newProduct as Product, id: editingId }); alert("Updated!"); }
@@ -107,7 +109,6 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        
         {activeTab === 'products' && (
             <div className="lg:col-span-2">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -122,6 +123,20 @@ const AdminDashboard: React.FC = () => {
                             {CATEGORIES.filter(c=>c!=='All').map(c=><option key={c} value={c}>{c}</option>)}
                         </select>
                         <textarea rows={4} className="border p-2 rounded w-full" value={newProduct.description} onChange={e=>setNewProduct({...newProduct, description:e.target.value})} required></textarea>
+                        
+                        {/* TOGGLES SECTION */}
+                        <div className="flex space-x-6">
+                            <div className="flex items-center">
+                                <input type="checkbox" id="isUpcoming" checked={newProduct.isUpcoming || false} onChange={(e) => setNewProduct({...newProduct, isUpcoming: e.target.checked})} className="w-4 h-4 text-primary rounded focus:ring-primary" />
+                                <label htmlFor="isUpcoming" className="ml-2 text-sm font-medium text-gray-900">Upcoming Product</label>
+                            </div>
+                            {/* NEW OUT OF STOCK TOGGLE */}
+                            <div className="flex items-center">
+                                <input type="checkbox" id="isOutOfStock" checked={newProduct.isOutOfStock || false} onChange={(e) => setNewProduct({...newProduct, isOutOfStock: e.target.checked})} className="w-4 h-4 text-red-600 rounded focus:ring-red-500" />
+                                <label htmlFor="isOutOfStock" className="ml-2 text-sm font-bold text-red-600">Out of Stock</label>
+                            </div>
+                        </div>
+
                         <button type="submit" className="w-full bg-black text-white py-3 rounded font-bold">{editingId?'Update':'Add'}</button>
                     </form>
                 </div>
@@ -150,6 +165,7 @@ const AdminDashboard: React.FC = () => {
                       <tr className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold tracking-wider">
                         <th className="px-6 py-4">ID</th>
                         <th className="px-6 py-4">Customer</th>
+                        <th className="px-6 py-4">Phone</th>
                         <th className="px-6 py-4">Product</th>
                         <th className="px-6 py-4">Total</th>
                         <th className="px-6 py-4">Status</th>
@@ -161,6 +177,7 @@ const AdminDashboard: React.FC = () => {
                         <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 font-medium text-gray-900">#{order.id.slice(0, 6).toUpperCase()}</td>
                           <td className="px-6 py-4 text-gray-700 font-bold">{order.customer}</td>
+                          <td className="px-6 py-4 text-gray-600">{order.phone}</td>
                           <td className="px-6 py-4 text-gray-600">{order.productName}</td>
                           <td className="px-6 py-4 font-bold text-gray-900">₹{order.total.toFixed(2)}</td>
                           <td className="px-6 py-4">{getStatusBadge(order.status)}</td>

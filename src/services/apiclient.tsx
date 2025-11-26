@@ -47,7 +47,12 @@ export const api = {
       let query = supabase.from('products').select('*');
       const { data, error } = await query;
       if (error) { console.error("Error fetching products:", error); return []; }
-      return data.map((item: any) => ({ ...item, isUpcoming: item.isUpcoming }));
+      // Map the new column
+      return data.map((item: any) => ({ 
+          ...item, 
+          isUpcoming: item.isUpcoming,
+          isOutOfStock: item.isOutOfStock 
+      }));
     },
     create: async (product: any): Promise<Product> => {
       const { data, error } = await supabase.from('products').insert([{
@@ -57,7 +62,8 @@ export const api = {
           description: product.description,
           image: product.image,
           tags: product.tags,
-          "isUpcoming": product.isUpcoming
+          "isUpcoming": product.isUpcoming,
+          "isOutOfStock": product.isOutOfStock // Save to DB
         }]).select().single();
       if (error) throw error;
       return data;
@@ -70,7 +76,8 @@ export const api = {
           description: product.description,
           image: product.image,
           tags: product.tags,
-          "isUpcoming": product.isUpcoming
+          "isUpcoming": product.isUpcoming,
+          "isOutOfStock": product.isOutOfStock // Update in DB
         }).eq('id', id).select().single();
       if (error) throw error;
       return data;
@@ -85,15 +92,14 @@ export const api = {
   // ORDERS
   orders: {
     create: async (orderData: any): Promise<Order> => {
-      // Create text summary
       const summaryText = orderData.items.map((i: any) => `${i.quantity || 1}x ${i.name}`).join(', ');
 
       const { data, error } = await supabase.from('orders').insert([{
-          user_email: orderData.userEmail || 'guest@example.com', // UPDATED: Uses real email
+          user_email: orderData.userEmail || 'guest@example.com',
           customer_name: orderData.customerName,
-          phone_number: orderData.phoneNumber, 
+          phone_number: orderData.phoneNumber,
           shipping_address: orderData.address,
-          quantity: orderData.totalQuantity, // UPDATED: Saves quantity to DB
+          quantity: orderData.totalQuantity,
           total: orderData.total,
           product_summary: summaryText,
           status: 'Processing'
@@ -122,6 +128,20 @@ export const api = {
   user: {
     updateProfile: async (data: Partial<User>): Promise<User> => {
         return { ...data } as User; 
+    }
+  },
+
+  // CATEGORIES
+  categories: {
+    getAll: async (): Promise<string[]> => {
+        const { data, error } = await supabase.from('categories').select('name').order('created_at', { ascending: true });
+        if (error) return [];
+        return ['All', ...data.map((c: any) => c.name)];
+    },
+    create: async (name: string): Promise<string> => {
+        const { data, error } = await supabase.from('categories').insert([{ name }]).select().single();
+        if (error) throw error;
+        return data.name;
     }
   }
 };

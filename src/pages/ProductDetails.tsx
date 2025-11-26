@@ -9,9 +9,7 @@ const ProductDetails: React.FC = () => {
   const { products, addToCart, user } = useShop();
   const navigate = useNavigate();
   
-  // NEW: Local quantity state
   const [buyQty, setBuyQty] = useState(1);
-
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<'payment' | 'address' | 'gateway' | 'success'>('payment');
   const [selectedPayment, setSelectedPayment] = useState('upi');
@@ -37,7 +35,6 @@ const ProductDetails: React.FC = () => {
     );
   }
 
-  // Handlers for Quantity Selector
   const increaseQty = () => setBuyQty(prev => prev + 1);
   const decreaseQty = () => setBuyQty(prev => (prev > 1 ? prev - 1 : 1));
 
@@ -51,24 +48,16 @@ const ProductDetails: React.FC = () => {
       return;
     }
     setCheckoutStep('gateway');
-    
     const fullAddressString = `${shippingAddress.address}, ${shippingAddress.city} - ${shippingAddress.zip}`;
-
     try {
         const newOrder = await api.orders.create({
-            userEmail: user?.email, // UPDATED: Passing Real Email
+            userEmail: user?.email,
             customerName: shippingAddress.fullName,
             phoneNumber: shippingAddress.phone,
             address: fullAddressString,
-            totalQuantity: buyQty, // UPDATED: Passing Total Quantity
-            total: product.price * buyQty, // UPDATED: Total Price based on Qty
-            items: [{ 
-                id: product.id, 
-                name: product.name, 
-                price: product.price, 
-                quantity: buyQty, // UPDATED: Item Quantity 
-                image: product.image 
-            }],
+            totalQuantity: buyQty,
+            total: product.price * buyQty,
+            items: [{ id: product.id, name: product.name, price: product.price, quantity: buyQty, image: product.image }],
         });
         setCreatedOrder(newOrder);
         setTimeout(() => {
@@ -112,8 +101,8 @@ const ProductDetails: React.FC = () => {
               <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">₹{product.price.toFixed(2)}</div>
               <p className="text-sm md:text-lg text-gray-600 leading-relaxed mb-6 md:mb-8">{product.description}</p>
 
-              {/* --- NEW: QUANTITY SELECTOR --- */}
-              {isCustomer && (
+              {/* QUANTITY SELECTOR */}
+              {!product.isOutOfStock && isCustomer && (
                   <div className="flex items-center mb-6">
                       <span className="text-sm font-medium text-gray-700 mr-4">Quantity:</span>
                       <div className="flex items-center border border-gray-300 rounded-lg">
@@ -124,21 +113,33 @@ const ProductDetails: React.FC = () => {
                   </div>
               )}
 
+              {/* BUTTON LOGIC */}
               <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 mb-6 md:mb-8">
-                {isCustomer && (
-                  <button onClick={() => addToCart(product, buyQty)} className="flex-1 bg-black text-white py-3 md:py-4 px-6 rounded-xl font-bold hover:bg-gray-800 transition-all flex items-center justify-center shadow-lg border border-transparent hover:border-secondary text-sm md:text-base">
-                    <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2" /> Add to Cart
-                  </button>
-                )}
-                {isCustomer && (
-                  <button onClick={handleBuyNow} className="flex-1 bg-secondary text-black py-3 md:py-4 px-6 rounded-xl font-bold hover:bg-yellow-300 transition-all flex items-center justify-center shadow-lg border border-black text-sm md:text-base">
-                    <CreditCard className="w-4 h-4 md:w-5 md:h-5 mr-2" /> Buy Now
-                  </button>
-                )}
-                {!isCustomer && (
-                    <div className="w-full text-center p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 font-medium text-sm md:text-base">
-                        Please <span className="font-bold underline cursor-pointer">Login</span> to purchase items.
+                {/* CASE 1: OUT OF STOCK */}
+                {product.isOutOfStock ? (
+                    <div className="w-full py-4 bg-gray-200 text-gray-500 font-bold text-center rounded-xl cursor-not-allowed border border-gray-300 text-lg">
+                        Out of Stock
                     </div>
+                ) : (
+                    // CASE 2: IN STOCK
+                    <>
+                        {isCustomer ? (
+                            // CASE 2A: LOGGED IN CUSTOMER
+                            <>
+                                <button onClick={() => addToCart(product, buyQty)} className="flex-1 bg-black text-white py-3 md:py-4 px-6 rounded-xl font-bold hover:bg-gray-800 transition-all flex items-center justify-center shadow-lg border border-transparent hover:border-secondary text-sm md:text-base">
+                                    <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2" /> Add to Cart
+                                </button>
+                                <button onClick={handleBuyNow} className="flex-1 bg-secondary text-black py-3 md:py-4 px-6 rounded-xl font-bold hover:bg-yellow-300 transition-all flex items-center justify-center shadow-lg border border-black text-sm md:text-base">
+                                    <CreditCard className="w-4 h-4 md:w-5 md:h-5 mr-2" /> Buy Now
+                                </button>
+                            </>
+                        ) : (
+                            // CASE 2B: GUEST (SHOW LOGIN PROMPT)
+                            <div className="w-full text-center p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 font-medium text-sm md:text-base">
+                                Please <span className="font-bold underline cursor-pointer">Login</span> to purchase items.
+                            </div>
+                        )}
+                    </>
                 )}
               </div>
 
@@ -164,16 +165,22 @@ const ProductDetails: React.FC = () => {
             {checkoutStep === 'payment' && (
               <>
                 <div className="p-6 space-y-4 overflow-y-auto">
-                  {/* Payment Options (UI Only) */}
-                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer ${selectedPayment === 'upi' ? 'border-secondary bg-yellow-50' : ''}`} onClick={() => setSelectedPayment('upi')}>
+                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${selectedPayment === 'upi' ? 'border-secondary bg-yellow-50 ring-1 ring-secondary' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setSelectedPayment('upi')}>
                     <div className="w-5 h-5 rounded-full border border-gray-400 mr-4 flex items-center justify-center">{selectedPayment === 'upi' && <div className="w-3 h-3 bg-secondary rounded-full" />}</div>
-                    <div className="flex-1"><div className="font-bold text-gray-900">UPI / GPay</div></div>
+                    <div className="flex-1"><div className="font-bold text-gray-900">UPI / GPay / PhonePe</div><div className="text-xs text-gray-500">Pay securely via your preferred UPI app</div></div>
                   </label>
-                  {/* ... Other options ... */}
+                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${selectedPayment === 'card' ? 'border-secondary bg-yellow-50 ring-1 ring-secondary' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setSelectedPayment('card')}>
+                    <div className="w-5 h-5 rounded-full border border-gray-400 mr-4 flex items-center justify-center">{selectedPayment === 'card' && <div className="w-3 h-3 bg-secondary rounded-full" />}</div>
+                    <div className="flex-1"><div className="font-bold text-gray-900">Credit / Debit Card</div><div className="text-xs text-gray-500">Visa, Mastercard, RuPay</div></div><CreditCard className="w-5 h-5 text-gray-400" />
+                  </label>
+                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${selectedPayment === 'cod' ? 'border-secondary bg-yellow-50 ring-1 ring-secondary' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setSelectedPayment('cod')}>
+                    <div className="w-5 h-5 rounded-full border border-gray-400 mr-4 flex items-center justify-center">{selectedPayment === 'cod' && <div className="w-3 h-3 bg-secondary rounded-full" />}</div>
+                    <div className="flex-1"><div className="font-bold text-gray-900">Cash on Delivery</div><div className="text-xs text-gray-500">Pay when you receive the order</div></div><Banknote className="w-5 h-5 text-gray-400" />
+                  </label>
                 </div>
                 <div className="p-6 bg-gray-50 border-t border-gray-100">
-                  <div className="flex justify-between items-center mb-4 text-sm"><span className="text-gray-600">Total Amount:</span><span className="text-xl font-bold text-gray-900">₹{(product.price * buyQty).toFixed(2)}</span></div>
-                  <button onClick={handlePaymentSelectNext} className="w-full bg-black text-white py-3.5 rounded-xl font-bold">Next Step</button>
+                  <div className="flex justify-between items-center mb-4 text-sm"><span className="text-gray-600">Total Amount:</span><span className="text-xl font-bold text-gray-900">₹{product.price.toFixed(2)}</span></div>
+                  <button onClick={handlePaymentSelectNext} className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg flex items-center justify-center">Next Step <ChevronRight className="w-4 h-4 ml-1" /></button>
                 </div>
               </>
             )}
@@ -182,14 +189,12 @@ const ProductDetails: React.FC = () => {
                     <input type="text" placeholder="Full Name" className="border p-2 rounded" required value={shippingAddress.fullName} onChange={e=>setShippingAddress({...shippingAddress, fullName: e.target.value})}/>
                     <input type="text" placeholder="Address" className="border p-2 rounded" required value={shippingAddress.address} onChange={e=>setShippingAddress({...shippingAddress, address: e.target.value})}/>
                     <input type="text" placeholder="City" className="border p-2 rounded" required value={shippingAddress.city} onChange={e=>setShippingAddress({...shippingAddress, city: e.target.value})}/>
-                    <div className="grid grid-cols-2 gap-4">
-                      <input type="text" placeholder="ZIP" className="border p-2 rounded" required value={shippingAddress.zip} onChange={e=>setShippingAddress({...shippingAddress, zip: e.target.value})}/>
-                      <input type="tel" placeholder="Phone" className="border p-2 rounded" required value={shippingAddress.phone} onChange={e=>setShippingAddress({...shippingAddress, phone: e.target.value})}/>
-                    </div>
+                    <input type="text" placeholder="ZIP" className="border p-2 rounded" required value={shippingAddress.zip} onChange={e=>setShippingAddress({...shippingAddress, zip: e.target.value})}/>
+                    <input type="tel" placeholder="Phone" className="border p-2 rounded" required value={shippingAddress.phone} onChange={e=>setShippingAddress({...shippingAddress, phone: e.target.value})}/>
                     <button type="submit" className="w-full bg-black text-white py-3 rounded-xl">Pay</button>
                 </form>
             )}
-            {checkoutStep === 'gateway' && <div className="p-12 text-center">Processing Payment...</div>}
+            {checkoutStep === 'gateway' && <div className="p-12 text-center">Processing...</div>}
             {checkoutStep === 'success' && <div className="p-12 text-center text-green-600 font-bold">Order Confirmed!<br/>#{createdOrder?.id?.slice(0,6).toUpperCase()}</div>}
           </div>
         </div>

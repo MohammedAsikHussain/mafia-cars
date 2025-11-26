@@ -9,6 +9,7 @@ export interface Product {
   reviews: number;
   tags: string[];
   isUpcoming?: boolean;
+  isOutOfStock?: boolean; // NEW FIELD
 }
 
 export interface CartItem extends Product {
