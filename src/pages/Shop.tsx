@@ -6,12 +6,13 @@ import ProductCard from '../components/ProductCard';
 import { CATEGORIES } from '../services/mockData'; 
 import { useShop } from '../context/ShopContext';
 import { SortOption } from '../types';
+// We import api just for types/compatibility, but we won't fetch categories from it
+import { api } from '../services/api'; 
 
 const Shop: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { products } = useShop();
-  
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortOption, setSortOption] = useState<SortOption>(SortOption.Relevance);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,7 +35,8 @@ const Shop: React.FC = () => {
 
   // Helper to get icons for the hardcoded categories
   const getIcon = (name: string) => {
-    const icons: {[key: string]: JSX.Element} = {
+    // FIXED: Changed JSX.Element to React.ReactNode
+    const icons: {[key: string]: React.ReactNode} = {
         'Gear Knobs': <Settings className="w-6 h-6" />,
         'DRL Lights': <Lightbulb className="w-6 h-6" />,
         'Mobile Holders': <Smartphone className="w-6 h-6" />,
