@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Star, ShoppingCart, ArrowLeft, Truck, CreditCard, X, CheckCircle, Minus, Plus } from 'lucide-react';
+import { Star, ShoppingCart, ArrowLeft, Truck, CreditCard, X, CheckCircle, Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { api } from '../services/api';
 
@@ -15,8 +15,8 @@ const ProductDetails: React.FC = () => {
   const [selectedPayment, setSelectedPayment] = useState('upi');
   const [createdOrder, setCreatedOrder] = useState<any>(null);
   
-  // NEW: Selected Image State
-  const [selectedImage, setSelectedImage] = useState<string>('');
+  // Image Slider State
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const [shippingAddress, setShippingAddress] = useState({
     fullName: user?.name || '',
@@ -29,13 +29,14 @@ const ProductDetails: React.FC = () => {
 
   const product = products.find(p => p.id === id);
 
-  // Set default selected image when product loads
-  useEffect(() => {
-    if (product) {
-      // Use first image from array, or fallback to single image
-      setSelectedImage(product.images?.[0] || product.image || '');
-    }
-  }, [product]);
+  // Get images safely
+  const allImages = product 
+    ? (product.images && product.images.length > 0 ? product.images : [product.image || '']) 
+    : [];
+
+  // Handlers
+  const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
 
   if (!product) {
     return (
@@ -60,6 +61,10 @@ const ProductDetails: React.FC = () => {
     }
     setCheckoutStep('gateway');
     const fullAddressString = `${shippingAddress.address}, ${shippingAddress.city} - ${shippingAddress.zip}`;
+    
+    // Select currently viewed image
+    const selectedImageForOrder = allImages[currentImageIndex];
+
     try {
         const newOrder = await api.orders.create({
             userEmail: user?.email,
@@ -68,7 +73,13 @@ const ProductDetails: React.FC = () => {
             address: fullAddressString,
             totalQuantity: buyQty,
             total: product.price * buyQty,
-            items: [{ id: product.id, name: product.name, price: product.price, quantity: buyQty, image: product.images?.[0] || product.image }],
+            items: [{ 
+                id: product.id, 
+                name: product.name, 
+                price: product.price, 
+                quantity: buyQty, 
+                image: selectedImageForOrder // SAVE SELECTED IMAGE
+            }],
         });
         setCreatedOrder(newOrder);
         setTimeout(() => {
@@ -81,10 +92,13 @@ const ProductDetails: React.FC = () => {
     }
   };
 
-  const isCustomer = user?.role === 'customer';
+  const handleAddToCart = () => {
+      const selectedImageForOrder = allImages[currentImageIndex];
+      const productWithSelectedImage = { ...product, image: selectedImageForOrder };
+      addToCart(productWithSelectedImage, buyQty);
+  };
 
-  // Get all images
-  const allImages = product.images && product.images.length > 0 ? product.images : [product.image];
+  const isCustomer = user?.role === 'customer';
 
   return (
     <div className="min-h-screen bg-gray-50 py-6 md:py-10 relative">
@@ -96,20 +110,37 @@ const ProductDetails: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-secondary overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2">
             
-            {/* LEFT SIDE: IMAGES */}
-            <div className="bg-gray-100 flex flex-col">
-                {/* Main Image */}
-                <div className="h-64 sm:h-80 md:h-96 relative w-full">
-                    <img src={selectedImage} alt={product.name} className="w-full h-full object-cover" />
+            {/* LEFT SIDE: IMAGE GALLERY */}
+            <div className="bg-white flex flex-col border-r border-gray-100">
+                {/* Main Image Container - UPDATED for Full Visibility */}
+                <div className="h-64 sm:h-80 md:h-96 relative w-full group bg-white flex items-center justify-center">
+                    <img 
+                        src={allImages[currentImageIndex]} 
+                        alt={product.name} 
+                        className="w-full h-full object-contain transition-opacity duration-300 p-4" 
+                    />
+                    
+                    {/* Arrow Buttons */}
+                    {allImages.length > 1 && (
+                        <>
+                            <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-black p-2 rounded-full shadow-md border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-black p-2 rounded-full shadow-md border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
+                        </>
+                    )}
                 </div>
-                {/* Thumbnail Gallery (Only if multiple images) */}
+
+                {/* Thumbnail Strip */}
                 {allImages.length > 1 && (
-                    <div className="flex gap-2 p-4 overflow-x-auto bg-white border-t border-gray-100">
+                    <div className="flex gap-2 p-4 overflow-x-auto bg-white border-t border-gray-100 justify-center">
                         {allImages.map((img, index) => (
                             <button 
                                 key={index} 
-                                onClick={() => setSelectedImage(img!)}
-                                className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${selectedImage === img ? 'border-secondary' : 'border-transparent hover:border-gray-300'}`}
+                                onClick={() => setCurrentImageIndex(index)}
+                                className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${currentImageIndex === index ? 'border-secondary ring-1 ring-secondary' : 'border-gray-200 hover:border-gray-300'}`}
                             >
                                 <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
                             </button>
@@ -135,7 +166,7 @@ const ProductDetails: React.FC = () => {
               <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">₹{product.price.toFixed(2)}</div>
               <p className="text-sm md:text-lg text-gray-600 leading-relaxed mb-6 md:mb-8">{product.description}</p>
 
-              {/* QUANTITY SELECTOR */}
+              {/* QUANTITY */}
               {!product.isOutOfStock && isCustomer && (
                   <div className="flex items-center mb-6">
                       <span className="text-sm font-medium text-gray-700 mr-4">Quantity:</span>
@@ -147,7 +178,7 @@ const ProductDetails: React.FC = () => {
                   </div>
               )}
 
-              {/* BUTTON LOGIC */}
+              {/* BUTTONS */}
               <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 mb-6 md:mb-8">
                 {product.isOutOfStock ? (
                     <div className="w-full py-4 bg-gray-200 text-gray-500 font-bold text-center rounded-xl cursor-not-allowed border border-gray-300 text-lg">
@@ -157,7 +188,7 @@ const ProductDetails: React.FC = () => {
                     <>
                         {isCustomer ? (
                             <>
-                                <button onClick={() => addToCart(product, buyQty)} className="flex-1 bg-black text-white py-3 md:py-4 px-6 rounded-xl font-bold hover:bg-gray-800 transition-all flex items-center justify-center shadow-lg border border-transparent hover:border-secondary text-sm md:text-base">
+                                <button onClick={handleAddToCart} className="flex-1 bg-black text-white py-3 md:py-4 px-6 rounded-xl font-bold hover:bg-gray-800 transition-all flex items-center justify-center shadow-lg border border-transparent hover:border-secondary text-sm md:text-base">
                                     <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2" /> Add to Cart
                                 </button>
                                 <button onClick={handleBuyNow} className="flex-1 bg-secondary text-black py-3 md:py-4 px-6 rounded-xl font-bold hover:bg-yellow-300 transition-all flex items-center justify-center shadow-lg border border-black text-sm md:text-base">
@@ -183,21 +214,19 @@ const ProductDetails: React.FC = () => {
         </div>
       </div>
 
+      {/* PAYMENT MODAL (Same logic) */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          {/* Payment Modal Content (Same as before, abbreviated for clarity) */}
           <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl scale-100 flex flex-col max-h-[90vh]">
-             {/* ... Header ... */}
+             {/* ... Payment Modal Content ... */}
              {checkoutStep !== 'success' && checkoutStep !== 'gateway' && (
               <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="font-bold text-lg text-gray-900">Checkout</h3>
                 <button onClick={() => setShowPaymentModal(false)}><X className="w-6 h-6 text-gray-400" /></button>
               </div>
             )}
-            {/* ... Steps ... */}
             {checkoutStep === 'payment' && (
               <div className="p-6">
-                 {/* Payment Options */}
                  <div className="space-y-4 mb-4">
                     <label className={`flex items-center p-4 border rounded-xl cursor-pointer ${selectedPayment === 'upi' ? 'border-secondary bg-yellow-50' : ''}`} onClick={() => setSelectedPayment('upi')}>
                         <div className="font-bold">UPI / GPay</div>
