@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus, Wand2, BarChart3, AlertCircle, ArrowLeft, Search, Filter, MoreHorizontal, CheckCircle, Truck, Clock, Pencil, Trash2, X, RefreshCw } from 'lucide-react';
+import { Package, Plus, Wand2, AlertCircle, ArrowLeft, Search, Filter, MoreHorizontal, CheckCircle, Truck, Clock, Pencil, Trash2, X, RefreshCw } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { generateProductDescription } from '../services/geminiService';
 import { api } from '../services/api'; 
@@ -242,7 +242,16 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-[500px]">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                    <h2 className="text-lg font-bold text-gray-900">Orders</h2>
-                   {/* ... Same Orders UI ... */}
+                   <div className="relative">
+                        <button onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} className="p-2 border rounded-lg hover:bg-gray-50 flex items-center"><Filter className="w-5 h-5" /></button>
+                        {isFilterMenuOpen && (
+                            <div className="absolute right-0 top-12 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-50">
+                                {['All', 'Processing', 'Shipped', 'Delivered', 'Returned'].map(s => (
+                                    <button key={s} onClick={() => { setFilterStatus(s); setIsFilterMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">{s}</button>
+                                ))}
+                            </div>
+                        )}
+                   </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
