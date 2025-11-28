@@ -11,11 +11,22 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart, user } = useShop();
 
+  // Pick first image or fallback
+  const displayImage = product.images?.[0] || product.image;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-secondary flex flex-col h-full">
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-secondary flex flex-col h-full relative">
+      
+      {/* Out of Stock Overlay */}
+      {product.isOutOfStock && (
+          <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
+              <span className="bg-red-600 text-white px-4 py-1 rounded-full font-bold text-sm transform -rotate-12 shadow-lg">Out of Stock</span>
+          </div>
+      )}
+
       <Link to={`/product/${product.id}`} className="relative group overflow-hidden bg-gray-100 h-64 flex items-center justify-center">
         <img 
-          src={product.image} 
+          src={displayImage} 
           alt={product.name} 
           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
         />
@@ -38,8 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         
         <div className="mt-auto flex items-center justify-between">
           <span className="text-xl font-bold text-gray-900">₹{product.price.toFixed(2)}</span>
-          {/* Only show Add to Cart if product is NOT Upcoming AND User is Logged In as Customer */}
-          {!product.isUpcoming && user?.role === 'customer' && (
+          {!product.isUpcoming && !product.isOutOfStock && user?.role === 'customer' && (
             <button 
               onClick={() => addToCart(product)}
               className="p-2 bg-gray-100 text-gray-700 rounded-full hover:bg-primary hover:text-white transition-colors border border-transparent hover:border-secondary"

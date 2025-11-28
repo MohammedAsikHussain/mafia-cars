@@ -3,13 +3,16 @@ export interface Product {
   name: string;
   price: number;
   category: string;
-  image: string;
+  // UPDATED: Now uses an array of strings
+  images: string[]; 
+  // keeping 'image' optional for backward compatibility if needed, though we will focus on 'images'
+  image?: string; 
   description: string;
   rating: number;
   reviews: number;
   tags: string[];
   isUpcoming?: boolean;
-  isOutOfStock?: boolean; // NEW FIELD
+  isOutOfStock?: boolean;
 }
 
 export interface CartItem extends Product {
@@ -23,7 +26,7 @@ export interface User {
   email: string;
   address?: string;
   profilePic?: string;
-  token?: string; // JWT Token
+  token?: string;
 }
 
 export interface Order {
@@ -31,25 +34,12 @@ export interface Order {
   date: string;
   total: number;
   status: 'Processing' | 'Shipped' | 'Delivered';
-  items: CartItem[] | any[]; // relaxed type for API flexibility
+  items: CartItem[] | any[];
   customerId?: string;
   customerName?: string;
+  phone_number?: string;
+  product_summary?: string;
 }
-
-export enum SortOption {
-  Relevance = 'relevance',
-  PriceLowHigh = 'price_asc',
-  PriceHighLow = 'price_desc',
-  Newest = 'newest',
-}
-
-// API Response Wrappers
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
-
 export interface AuthResponse {
   user: User;
   token: string;

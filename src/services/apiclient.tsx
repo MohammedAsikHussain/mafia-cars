@@ -47,9 +47,12 @@ export const api = {
       let query = supabase.from('products').select('*');
       const { data, error } = await query;
       if (error) { console.error("Error fetching products:", error); return []; }
-      // Map the new column
+      
+      // Map data to ensure 'images' array exists
       return data.map((item: any) => ({ 
           ...item, 
+          // If 'images' is empty/null, fall back to old 'image' column wrapped in array
+          images: item.images && item.images.length > 0 ? item.images : (item.image ? [item.image] : []),
           isUpcoming: item.isUpcoming,
           isOutOfStock: item.isOutOfStock 
       }));
@@ -60,25 +63,32 @@ export const api = {
           price: product.price,
           category: product.category,
           description: product.description,
-          image: product.image,
+          images: product.images, // Saving Array
+          image: product.images[0], // Save first image to old column just for safety
           tags: product.tags,
           "isUpcoming": product.isUpcoming,
-          "isOutOfStock": product.isOutOfStock // Save to DB
+          "isOutOfStock": product.isOutOfStock
         }]).select().single();
       if (error) throw error;
       return data;
     },
     update: async (id: string, product: Partial<Product>): Promise<Product> => {
-      const { data, error } = await supabase.from('products').update({
+      const updateData: any = {
           name: product.name,
           price: product.price,
           category: product.category,
           description: product.description,
-          image: product.image,
+          images: product.images, // Update Array
           tags: product.tags,
           "isUpcoming": product.isUpcoming,
-          "isOutOfStock": product.isOutOfStock // Update in DB
-        }).eq('id', id).select().single();
+          "isOutOfStock": product.isOutOfStock
+      };
+      // Also update legacy column if images exist
+      if (product.images && product.images.length > 0) {
+          updateData.image = product.images[0];
+      }
+
+      const { data, error } = await supabase.from('products').update(updateData).eq('id', id).select().single();
       if (error) throw error;
       return data;
     },
@@ -145,3 +155,4 @@ export const api = {
     }
   }
 };
+

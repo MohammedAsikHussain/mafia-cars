@@ -33,69 +33,56 @@ const Cart: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Cart Items */}
           <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6">
               <div className="space-y-6">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex flex-col sm:flex-row items-center border-b border-gray-100 pb-6 last:border-0 last:pb-0">
-                    <img src={item.image} alt={item.name} className="w-24 h-24 rounded-lg object-cover mb-4 sm:mb-0 sm:mr-6"/>
-                    
-                    <div className="flex-1 text-center sm:text-left">
-                      <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
-                      <p className="text-sm text-gray-500 mb-2">{item.category}</p>
-                      <div className="text-primary font-bold">₹{item.price.toFixed(2)}</div>
-                    </div>
+                {cart.map((item) => {
+                  // Handle image array vs string
+                  const displayImage = Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : item.image;
+                  
+                  return (
+                    <div key={item.id} className="flex flex-col sm:flex-row items-center border-b border-gray-100 pb-6 last:border-0 last:pb-0">
+                      <img src={displayImage} alt={item.name} className="w-24 h-24 rounded-lg object-cover mb-4 sm:mb-0 sm:mr-6"/>
+                      
+                      <div className="flex-1 text-center sm:text-left">
+                        <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
+                        <p className="text-sm text-gray-500 mb-2">{item.category}</p>
+                        <div className="text-primary font-bold">₹{item.price.toFixed(2)}</div>
+                      </div>
 
-                    <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-                      <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 hover:bg-white rounded-md transition-colors" disabled={item.quantity <= 1}>
-                          <Minus className="w-4 h-4 text-gray-600" />
-                        </button>
-                        <span className="mx-4 font-medium text-gray-900 w-4 text-center">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-1 hover:bg-white rounded-md transition-colors">
-                          <Plus className="w-4 h-4 text-gray-600" />
+                      <div className="flex items-center space-x-4 mt-4 sm:mt-0">
+                        <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                          <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 hover:bg-white rounded-md transition-colors" disabled={item.quantity <= 1}>
+                            <Minus className="w-4 h-4 text-gray-600" />
+                          </button>
+                          <span className="mx-4 font-medium text-gray-900 w-4 text-center">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-1 hover:bg-white rounded-md transition-colors">
+                            <Plus className="w-4 h-4 text-gray-600" />
+                          </button>
+                        </div>
+                        <button onClick={() => removeFromCart(item.id)} className="text-gray-400 hover:text-red-500 transition-colors p-2">
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
-                      <button onClick={() => removeFromCart(item.id)} className="text-gray-400 hover:text-red-500 transition-colors p-2">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Summary */}
           <div className="w-full lg:w-96">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
-              
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span>₹{cartTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
-                  <span className="text-green-600">Free</span>
-                </div>
-                {/* REMOVED TAX ESTIMATE HERE */}
-                
+                <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>₹{cartTotal.toFixed(2)}</span></div>
+                <div className="flex justify-between text-gray-600"><span>Shipping</span><span className="text-green-600">Free</span></div>
                 <div className="h-px bg-gray-100 my-2"></div>
-                <div className="flex justify-between text-xl font-bold text-gray-900">
-                  <span>Total</span>
-                  <span>₹{cartTotal.toFixed(2)}</span>
-                </div>
+                <div className="flex justify-between text-xl font-bold text-gray-900"><span>Total</span><span>₹{cartTotal.toFixed(2)}</span></div>
               </div>
-
               <button onClick={() => { alert('Checkout functionality coming soon!'); clearCart(); }} className="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-gray-800 transition-colors flex items-center justify-center mb-4">
-                Proceed to Checkout
-                <ArrowRight className="w-5 h-5 ml-2" />
+                Proceed to Checkout <ArrowRight className="w-5 h-5 ml-2" />
               </button>
-              
-              {/* REMOVED STRIPE TEXT HERE */}
             </div>
           </div>
         </div>
