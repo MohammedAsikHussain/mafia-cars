@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, Search, User, Menu, X, Camera, Mail, Lock, KeyRound } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { analyzeImageForSearch } from '../services/geminiService';
-import { api } from '../services/apiclient';
+import { api } from '../services/api';
 
 // Updated interface to include email
 interface LoginModalProps {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Package, Plus, Wand2, BarChart3, AlertCircle, ArrowLeft, Search, Filter, MoreHorizontal, CheckCircle, Truck, Clock, Pencil, Trash2, X, RefreshCw } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { generateProductDescription } from '../services/geminiService';
-import { api } from '../services/apiclient'; 
+import { api } from '../services/api'; 
 import { Product } from '../types';
 import { CATEGORIES } from '../services/mockData';
 

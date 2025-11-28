@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Package, MapPin, LogOut, ArrowLeft, Clock, CheckCircle, Truck, Pencil, Save, X, Camera, ShoppingBag } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
-import { api } from '../services/apiclient';
+import { api } from '../services/api';
 
 const UserProfile: React.FC = () => {
   const { user, logout, updateUserProfile } = useShop();

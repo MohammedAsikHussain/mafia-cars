@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Star, ShoppingCart, ArrowLeft, Truck, CreditCard, X, CheckCircle, Minus, Plus } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
-import { api } from '../services/apiclient';
+import { api } from '../services/api';
 
 const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();

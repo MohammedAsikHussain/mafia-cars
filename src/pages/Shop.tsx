@@ -4,7 +4,7 @@ import { ChevronDown, ArrowLeft, Settings, Lightbulb, Smartphone, CircleDashed, 
 import ProductCard from '../components/ProductCard';
 import { useShop } from '../context/ShopContext';
 import { SortOption } from '../types';
-import { api } from '../services/apiclient'; // Import API
+import { api } from '../services/api'; // Import API
 
 const Shop: React.FC = () => {
   const location = useLocation();
