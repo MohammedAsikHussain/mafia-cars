@@ -3,10 +3,8 @@ export interface Product {
   name: string;
   price: number;
   category: string;
-  // UPDATED: Now uses an array of strings
-  images: string[]; 
-  // keeping 'image' optional for backward compatibility if needed, though we will focus on 'images'
-  image?: string; 
+  images: string[]; // Array of strings for multiple photos
+  image?: string;   // Optional fallback for single photo
   description: string;
   rating: number;
   reviews: number;
@@ -39,7 +37,10 @@ export interface Order {
   customerName?: string;
   phone_number?: string;
   product_summary?: string;
+  shipping_address?: string;
 }
+
+// THIS INTERFACE IS REQUIRED FOR LOGIN
 export interface AuthResponse {
   user: User;
   token: string;

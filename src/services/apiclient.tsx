@@ -48,11 +48,11 @@ export const api = {
       const { data, error } = await query;
       if (error) { console.error("Error fetching products:", error); return []; }
       
-      // Map data to ensure 'images' array exists
+      // SAFE MAPPING: Handles both single image and multiple images
       return data.map((item: any) => ({ 
           ...item, 
-          // If 'images' is empty/null, fall back to old 'image' column wrapped in array
           images: item.images && item.images.length > 0 ? item.images : (item.image ? [item.image] : []),
+          image: item.image || (item.images && item.images.length > 0 ? item.images[0] : ''),
           isUpcoming: item.isUpcoming,
           isOutOfStock: item.isOutOfStock 
       }));
@@ -63,8 +63,8 @@ export const api = {
           price: product.price,
           category: product.category,
           description: product.description,
-          images: product.images, // Saving Array
-          image: product.images[0], // Save first image to old column just for safety
+          images: product.images, 
+          image: product.images && product.images.length > 0 ? product.images[0] : product.image,
           tags: product.tags,
           "isUpcoming": product.isUpcoming,
           "isOutOfStock": product.isOutOfStock
@@ -78,12 +78,11 @@ export const api = {
           price: product.price,
           category: product.category,
           description: product.description,
-          images: product.images, // Update Array
+          images: product.images,
           tags: product.tags,
           "isUpcoming": product.isUpcoming,
           "isOutOfStock": product.isOutOfStock
       };
-      // Also update legacy column if images exist
       if (product.images && product.images.length > 0) {
           updateData.image = product.images[0];
       }
@@ -102,6 +101,7 @@ export const api = {
   // ORDERS
   orders: {
     create: async (orderData: any): Promise<Order> => {
+      // Create text summary
       const summaryText = orderData.items.map((i: any) => `${i.quantity || 1}x ${i.name}`).join(', ');
 
       const { data, error } = await supabase.from('orders').insert([{
@@ -155,4 +155,3 @@ export const api = {
     }
   }
 };
-
