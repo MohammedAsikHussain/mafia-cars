@@ -2,42 +2,26 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, ArrowLeft, Settings, Lightbulb, Smartphone, CircleDashed, SprayCan, Wind, Radio, Copy, Armchair, Footprints, Tag } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+// Import the hardcoded categories
+import { CATEGORIES } from '../services/mockData'; 
 import { useShop } from '../context/ShopContext';
 import { SortOption } from '../types';
-import { api } from '../services/api'; // Import API
 
 const Shop: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { products } = useShop();
+  
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortOption, setSortOption] = useState<SortOption>(SortOption.Relevance);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // NEW: State to hold real categories from database
-  const [dbCategories, setDbCategories] = useState<string[]>(['All']);
-
-  // NEW: Fetch categories from Supabase
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const cats = await api.categories.getAll();
-        if (cats.length > 0) {
-            setDbCategories(cats);
-        }
-      } catch (error) {
-        console.error("Failed to load categories", error);
-      }
-    };
-    fetchCategories();
-  }, []);
   
   // Parse query params for search
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const search = params.get('search');
     if (search) {
-        if (dbCategories.includes(search)) {
+        if (CATEGORIES.includes(search)) {
             setSelectedCategory(search);
             setSearchQuery('');
         } else {
@@ -46,9 +30,9 @@ const Shop: React.FC = () => {
     } else {
         setSearchQuery('');
     }
-  }, [location.search, dbCategories]);
+  }, [location.search]);
 
-  // Helper to get icons (Mapping names to icons)
+  // Helper to get icons for the hardcoded categories
   const getIcon = (name: string) => {
     const icons: {[key: string]: JSX.Element} = {
         'Gear Knobs': <Settings className="w-6 h-6" />,
@@ -91,8 +75,7 @@ const Shop: React.FC = () => {
         result.sort((a, b) => b.price - a.price);
         break;
       case SortOption.Newest:
-        // Sort by ID as proxy for newest (assuming larger ID is newer or using numeric/uuid logic)
-        // Better to use created_at if available, but this works for now
+        // Mock newest by ID logic
         result.sort((a, b) => (a.id > b.id ? -1 : 1));
         break;
       default:
@@ -121,7 +104,7 @@ const Shop: React.FC = () => {
               : "Explore our premium collection"}
           </p>
 
-          {/* --- Shop by Category (Using DB List) --- */}
+          {/* --- Shop by Category (Fixed List from mockData) --- */}
           <div className="pb-4 overflow-x-auto scrollbar-hide">
             <div className="flex flex-wrap gap-4">
                {/* 'All' button */}
@@ -134,8 +117,8 @@ const Shop: React.FC = () => {
                 </span>
               </button>
 
-              {/* Map over DATABASE Categories (dbCategories) */}
-              {dbCategories.filter(c => c !== 'All').map((cat) => (
+              {/* Map over Mock Data CATEGORIES */}
+              {CATEGORIES.filter(c => c !== 'All').map((cat) => (
                 <button 
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
@@ -157,7 +140,6 @@ const Shop: React.FC = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* No Sidebar - Full Width Content */}
         <div className="w-full">
             {/* Toolbar */}
             <div className="flex justify-between items-center mb-6">
