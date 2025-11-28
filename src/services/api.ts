@@ -41,14 +41,31 @@ export const api = {
     }
   },
 
+  // NEW: STORAGE (Image Upload)
+  storage: {
+    uploadImage: async (file: File): Promise<string> => {
+        const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+        const { data, error } = await supabase.storage
+            .from('images')
+            .upload(fileName, file);
+        
+        if (error) throw error;
+
+        // Get Public URL
+        const { data: publicUrlData } = supabase.storage
+            .from('images')
+            .getPublicUrl(fileName);
+            
+        return publicUrlData.publicUrl;
+    }
+  },
+
   // PRODUCTS
   products: {
     getAll: async (params?: string): Promise<Product[]> => {
       let query = supabase.from('products').select('*');
       const { data, error } = await query;
       if (error) { console.error("Error fetching products:", error); return []; }
-      
-      // SAFE MAPPING: Handles both single image and multiple images
       return data.map((item: any) => ({ 
           ...item, 
           images: item.images && item.images.length > 0 ? item.images : (item.image ? [item.image] : []),
@@ -101,7 +118,6 @@ export const api = {
   // ORDERS
   orders: {
     create: async (orderData: any): Promise<Order> => {
-      // Create text summary
       const summaryText = orderData.items.map((i: any) => `${i.quantity || 1}x ${i.name}`).join(', ');
 
       const { data, error } = await supabase.from('orders').insert([{
