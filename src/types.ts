@@ -3,8 +3,8 @@ export interface Product {
   name: string;
   price: number;
   category: string;
-  images: string[]; // Array of strings for multiple photos
-  image?: string;   // Optional fallback for single photo
+  images: string[];
+  image?: string;
   description: string;
   rating: number;
   reviews: number;
@@ -40,8 +40,15 @@ export interface Order {
   shipping_address?: string;
 }
 
-// THIS INTERFACE IS REQUIRED FOR LOGIN
 export interface AuthResponse {
   user: User;
   token: string;
+}
+
+// --- THIS WAS MISSING ---
+export enum SortOption {
+  Relevance = 'relevance',
+  PriceLowHigh = 'price-low-high',
+  PriceHighLow = 'price-high-low',
+  Newest = 'newest',
 }
