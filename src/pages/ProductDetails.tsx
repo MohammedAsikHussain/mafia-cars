@@ -34,9 +34,18 @@ const ProductDetails: React.FC = () => {
     ? (product.images && product.images.length > 0 ? product.images : [product.image || '']) 
     : [];
 
-  // Handlers
-  const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-  const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  // Handlers - UPDATED: No Looping logic
+  const nextImage = () => {
+    if (currentImageIndex < allImages.length - 1) {
+        setCurrentImageIndex(prev => prev + 1);
+    }
+  };
+
+  const prevImage = () => {
+    if (currentImageIndex > 0) {
+        setCurrentImageIndex(prev => prev - 1);
+    }
+  };
 
   if (!product) {
     return (
@@ -111,46 +120,37 @@ const ProductDetails: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2">
             
             {/* LEFT SIDE: IMAGE GALLERY */}
-            <div className="bg-white flex flex-col border-r border-gray-100">
-                {/* Main Image Container - UPDATED for Full Visibility */}
-                <div className="h-64 sm:h-80 md:h-96 relative w-full group bg-white flex items-center justify-center">
+            <div className="bg-gray-50 flex flex-col border-r border-gray-100">
+                {/* Main Image Container - UPDATED for Full Fill (object-cover) */}
+                <div className="h-80 sm:h-96 md:h-[500px] relative w-full group flex items-center justify-center overflow-hidden">
                     <img 
                         src={allImages[currentImageIndex]} 
                         alt={product.name} 
-                        className="w-full h-full object-contain transition-opacity duration-300 p-4" 
+                        // CHANGED: object-cover to fill completely
+                        className="w-full h-full object-cover transition-opacity duration-300" 
                     />
                     
-                    {/* Arrow Buttons */}
+                    {/* Arrow Buttons - Only show if multiple images AND not at start/end */}
                     {allImages.length > 1 && (
                         <>
-                            <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-black p-2 rounded-full shadow-md border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-black p-2 rounded-full shadow-md border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
+                            {currentImageIndex > 0 && (
+                                <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-lg border border-gray-200 transition-all hover:scale-110">
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                            )}
+                            {currentImageIndex < allImages.length - 1 && (
+                                <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-lg border border-gray-200 transition-all hover:scale-110">
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+                            )}
                         </>
                     )}
                 </div>
-
-                {/* Thumbnail Strip */}
-                {allImages.length > 1 && (
-                    <div className="flex gap-2 p-4 overflow-x-auto bg-white border-t border-gray-100 justify-center">
-                        {allImages.map((img, index) => (
-                            <button 
-                                key={index} 
-                                onClick={() => setCurrentImageIndex(index)}
-                                className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${currentImageIndex === index ? 'border-secondary ring-1 ring-secondary' : 'border-gray-200 hover:border-gray-300'}`}
-                            >
-                                <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
-                            </button>
-                        ))}
-                    </div>
-                )}
+                {/* REMOVED THUMBNAIL STRIP */}
             </div>
 
             {/* RIGHT SIDE: DETAILS */}
-            <div className="p-6 md:p-12 flex flex-col justify-center">
+            <div className="p-6 md:p-12 flex flex-col justify-center bg-white">
               <div className="uppercase tracking-wide text-xs md:text-sm text-primary font-bold mb-2">{product.category}</div>
               <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">{product.name}</h1>
               
@@ -214,7 +214,7 @@ const ProductDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* PAYMENT MODAL (Same logic) */}
+      {/* PAYMENT MODAL */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl scale-100 flex flex-col max-h-[90vh]">
