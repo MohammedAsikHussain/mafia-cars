@@ -7,7 +7,8 @@ import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import AdminDashboard from './pages/AdminDashboard';
 import UserProfile from './pages/UserProfile';
-import OrderHistory from './pages/OrderHistory'; // NEW IMPORT
+import OrderHistory from './pages/OrderHistory';
+import Wishlist from './pages/Wishlist'; // NEW IMPORT
 import AIChatbot from './components/AIChatbot';
 import { ShopProvider, useShop } from './context/ShopContext';
 
@@ -82,7 +83,8 @@ const Layout: React.FC = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/profile" element={<UserProfile />} />
-          <Route path="/orders" element={<OrderHistory />} /> {/* NEW ROUTE */}
+          <Route path="/orders" element={<OrderHistory />} />
+          <Route path="/wishlist" element={<Wishlist />} /> {/* NEW ROUTE */}
         </Routes>
       </main>
       <AIChatbot />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Star, ShoppingCart } from 'lucide-react';
+import { Star, ShoppingCart, Heart } from 'lucide-react';
 import { Product } from '../types';
 import { useShop } from '../context/ShopContext';
 
@@ -9,28 +9,36 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { addToCart, user } = useShop();
+  const { addToCart, user, toggleWishlist, isInWishlist } = useShop();
 
   // Pick first image or fallback
   const displayImage = product.images?.[0] || product.image;
+  const isLiked = isInWishlist(product.id);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-secondary flex flex-col h-full relative">
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-secondary flex flex-col h-full relative group">
       
+      {/* Wishlist Button (Top Right) */}
+      <button 
+        onClick={(e) => { e.preventDefault(); toggleWishlist(product.id); }}
+        className="absolute top-3 right-3 z-20 p-2 rounded-full bg-white/80 hover:bg-white shadow-sm transition-all"
+      >
+        <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-400 hover:text-red-500'}`} />
+      </button>
+
       {/* Out of Stock Overlay */}
       {product.isOutOfStock && (
-          <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
+          <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center pointer-events-none">
               <span className="bg-red-600 text-white px-4 py-1 rounded-full font-bold text-sm transform -rotate-12 shadow-lg">Out of Stock</span>
           </div>
       )}
 
-      <Link to={`/product/${product.id}`} className="relative group overflow-hidden bg-gray-100 h-64 flex items-center justify-center">
+      <Link to={`/product/${product.id}`} className="relative overflow-hidden bg-gray-100 h-64 flex items-center justify-center">
         <img 
           src={displayImage} 
           alt={product.name} 
           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
         />
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300" />
       </Link>
       
       <div className="p-4 flex flex-col flex-grow">

@@ -143,7 +143,7 @@ const UserProfile: React.FC = () => {
                       <Package className="w-6 h-6 mb-2 text-blue-600" />
                       <span className="font-bold text-sm">View Orders</span>
                    </button>
-                   <button className="p-4 border border-gray-200 rounded-xl hover:border-black transition-all flex flex-col items-center text-center">
+                   <button onClick={() => navigate('/wishlist')} className="p-4 border border-gray-200 rounded-xl hover:border-black transition-all flex flex-col items-center text-center">
                       <Heart className="w-6 h-6 mb-2 text-red-500" />
                       <span className="font-bold text-sm">My Wishlist</span>
                    </button>

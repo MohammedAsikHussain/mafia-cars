@@ -4,13 +4,12 @@ import { api } from '../services/api';
 
 interface ShopContextType {
   cart: CartItem[];
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, count?: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   cartTotal: number;
   user: User | null;
-  // UPDATED: Login now accepts email
   login: (role: 'admin' | 'customer', customName?: string, customEmail?: string) => void;
   logout: () => void;
   updateUserProfile: (name: string) => void;
@@ -18,6 +17,12 @@ interface ShopContextType {
   addProduct: (product: Product) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
+  categories: string[];
+  addCategory: (name: string) => void;
+  // NEW: Wishlist Functions
+  wishlist: string[];
+  toggleWishlist: (productId: string) => void;
+  isInWishlist: (productId: string) => boolean;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -26,27 +31,47 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cart, setCart] = useState<CartItem[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>(['All']);
+
+  // NEW: Wishlist State (Persisted in LocalStorage)
+  const [wishlist, setWishlist] = useState<string[]>(() => {
+      try {
+          const saved = localStorage.getItem('mafia_wishlist');
+          return saved ? JSON.parse(saved) : [];
+      } catch (e) { return []; }
+  });
 
   useEffect(() => {
-    const fetchProducts = async () => {
+      localStorage.setItem('mafia_wishlist', JSON.stringify(wishlist));
+  }, [wishlist]);
+
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const data = await api.products.getAll();
-        setProducts(data || []);
+        const [prodData, catData] = await Promise.all([
+            api.products.getAll(),
+            api.categories.getAll()
+        ]);
+        setProducts(prodData || []);
+        if (catData && catData.length > 1) { 
+            setCategories(catData);
+        } else {
+            setCategories(['All', 'Gear Knobs', 'DRL Lights', 'Mobile Holders', 'Steerings', 'Dashboard Wax', 'Dashboard Perfumes', 'Car Antennas', 'Mirror Covers', 'Armrest', 'Pedal Covers']);
+        }
       } catch (err) {
-        console.error("Failed to fetch products:", err);
-        setProducts([]);
+        console.error("Failed to fetch data:", err);
       }
     };
-    fetchProducts();
+    fetchData();
   }, []);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, count: number = 1) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
-        return prev.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+        return prev.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + count } : item);
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, quantity: count }];
     });
   };
 
@@ -60,10 +85,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = () => setCart([]);
   const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
-  // UPDATED: Login function now saves the real email
   const login = async (role: 'admin' | 'customer', customName?: string, customEmail?: string) => {
     setUser({
-      id: 'u123', // In a full app, this comes from Supabase
+      id: 'u123',
       name: customName || (role === 'admin' ? 'Admin User' : 'Customer'),
       role: role,
       email: customEmail || (role === 'admin' ? 'admin@mafiacars.com' : 'user@example.com')
@@ -97,11 +121,30 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) { console.error(error); }
   };
 
+  const addCategory = async (name: string) => {
+    try {
+        await api.categories.create(name);
+        setCategories(prev => [...prev, name]);
+    } catch (error) {
+        console.error("Failed to add category", error);
+        alert("Failed to add category.");
+    }
+  };
+
+  // NEW: Toggle Wishlist Function
+  const toggleWishlist = (productId: string) => {
+      setWishlist(prev => prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]);
+  };
+  
+  const isInWishlist = (productId: string) => wishlist.includes(productId);
+
   return (
     <ShopContext.Provider value={{
         cart, addToCart, removeFromCart, updateQuantity, clearCart, cartTotal,
         user, login, logout, updateUserProfile,
-        products, addProduct, updateProduct, deleteProduct
+        products, addProduct, updateProduct, deleteProduct,
+        categories, addCategory,
+        wishlist, toggleWishlist, isInWishlist
       }}>
       {children}
     </ShopContext.Provider>
