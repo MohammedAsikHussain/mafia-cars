@@ -3,9 +3,10 @@ export interface Product {
   name: string;
   price: number;
   category: string;
-  images: string[];
-  image?: string;
+  images: string[]; 
+  image?: string; 
   description: string;
+  specifications?: string; // NEW FIELD
   rating: number;
   reviews: number;
   tags: string[];
@@ -52,7 +53,6 @@ export enum SortOption {
   Newest = 'newest',
 }
 
-// NEW: Review Type
 export interface Review {
   id: string;
   product_id: string;

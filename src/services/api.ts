@@ -41,6 +41,25 @@ export const api = {
     }
   },
 
+  // NEW: STORAGE (Image Upload Logic)
+  storage: {
+    uploadImage: async (file: File): Promise<string> => {
+        const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const { data, error } = await supabase.storage
+            .from('images')
+            .upload(fileName, file);
+        
+        if (error) throw error;
+
+        // Get Public URL
+        const { data: publicUrlData } = supabase.storage
+            .from('images')
+            .getPublicUrl(fileName);
+            
+        return publicUrlData.publicUrl;
+    }
+  },
+
   // PRODUCTS
   products: {
     getAll: async (params?: string): Promise<Product[]> => {
@@ -52,7 +71,8 @@ export const api = {
           images: item.images && item.images.length > 0 ? item.images : (item.image ? [item.image] : []),
           image: item.image || (item.images && item.images.length > 0 ? item.images[0] : ''),
           isUpcoming: item.isUpcoming,
-          isOutOfStock: item.isOutOfStock 
+          isOutOfStock: item.isOutOfStock,
+          specifications: item.specifications // New Field
       }));
     },
     create: async (product: any): Promise<Product> => {
@@ -61,6 +81,7 @@ export const api = {
           price: product.price,
           category: product.category,
           description: product.description,
+          specifications: product.specifications, // Save Spec
           images: product.images, 
           image: product.images && product.images.length > 0 ? product.images[0] : product.image,
           tags: product.tags,
@@ -76,6 +97,7 @@ export const api = {
           price: product.price,
           category: product.category,
           description: product.description,
+          specifications: product.specifications, // Update Spec
           images: product.images,
           tags: product.tags,
           "isUpcoming": product.isUpcoming,
@@ -95,29 +117,19 @@ export const api = {
     }
   },
 
-  // NEW: REVIEWS API
+  // ... (Reviews, Orders, User, Categories sections remain unchanged)
   reviews: {
     getByProduct: async (productId: string): Promise<Review[]> => {
-        const { data, error } = await supabase
-            .from('reviews')
-            .select('*')
-            .eq('product_id', productId)
-            .order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('reviews').select('*').eq('product_id', productId).order('created_at', { ascending: false });
         if (error) return [];
         return data as Review[];
     },
     create: async (review: Omit<Review, 'id' | 'created_at'>): Promise<Review> => {
-        const { data, error } = await supabase
-            .from('reviews')
-            .insert([review])
-            .select()
-            .single();
+        const { data, error } = await supabase.from('reviews').insert([review]).select().single();
         if (error) throw error;
         return data as Review;
     }
   },
-
-  // ORDERS
   orders: {
     create: async (orderData: any): Promise<Order> => {
       const summaryText = orderData.items.map((i: any) => `${i.quantity || 1}x ${i.name}`).join(', ');
@@ -150,15 +162,11 @@ export const api = {
        return data;
     }
   },
-
-  // USER
   user: {
     updateProfile: async (data: Partial<User>): Promise<User> => {
         return { ...data } as User; 
     }
   },
-
-  // CATEGORIES
   categories: {
     getAll: async (): Promise<string[]> => {
         const { data, error } = await supabase.from('categories').select('name').order('created_at', { ascending: true });
@@ -169,17 +177,6 @@ export const api = {
         const { data, error } = await supabase.from('categories').insert([{ name }]).select().single();
         if (error) throw error;
         return data.name;
-    }
-  },
-  
-  // STORAGE
-  storage: {
-    uploadImage: async (file: File): Promise<string> => {
-        const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
-        const { data, error } = await supabase.storage.from('images').upload(fileName, file);
-        if (error) throw error;
-        const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(fileName);
-        return publicUrlData.publicUrl;
     }
   }
 };
