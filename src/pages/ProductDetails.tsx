@@ -14,7 +14,7 @@ const ProductDetails: React.FC = () => {
   const [checkoutStep, setCheckoutStep] = useState<'payment' | 'address' | 'gateway' | 'success'>('payment');
   const [selectedPayment, setSelectedPayment] = useState('upi');
   const [createdOrder, setCreatedOrder] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'reviews'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'highlights' | 'reviews'>('description');
   
   // Image Slider State
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -184,8 +184,6 @@ const ProductDetails: React.FC = () => {
                     )}
                 </div>
 
-                {/* REMOVED COLOR SELECTOR HERE */}
-
                 {/* Quantity & Actions */}
                 {!product.isOutOfStock && isCustomer ? (
                     <div className="mb-8">
@@ -215,9 +213,9 @@ const ProductDetails: React.FC = () => {
                     <div className="w-full py-4 bg-gray-100 text-gray-400 font-bold text-center rounded-xl mb-8 border border-gray-200">Currently Unavailable</div>
                 )}
 
-                {/* Trust Badges (REMOVED RETURN POLICY) */}
+                {/* Trust Badges (UPDATED) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 border-t border-gray-100 pt-6">
-                    <div className="flex items-center gap-2"><Truck className="w-5 h-5 text-gray-400"/> Free shipping over ₹500</div>
+                    <div className="flex items-center gap-2"><Truck className="w-5 h-5 text-gray-400"/> Free Shipping</div>
                     <div className="flex items-center gap-2"><Shield className="w-5 h-5 text-gray-400"/> Quality Assured</div>
                 </div>
             </div>
@@ -232,7 +230,6 @@ const ProductDetails: React.FC = () => {
                         onClick={() => setActiveTab(tab as any)}
                         className={`flex-1 py-4 text-sm font-bold uppercase tracking-wide transition-colors ${activeTab === tab ? 'bg-gray-50 text-black border-b-2 border-black' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                        {/* Renamed 'specs' to 'highlights' */}
                         {tab === 'highlights' ? 'Highlights' : tab}
                     </button>
                 ))}
@@ -247,7 +244,6 @@ const ProductDetails: React.FC = () => {
                 {activeTab === 'highlights' && (
                     <div className="bg-gray-50 p-6 rounded-xl">
                          <h3 className="text-lg font-bold mb-4">Product Highlights</h3>
-                         {/* Use Description as Highlights if no separate data */}
                          <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                             {product.description}
                          </p>
@@ -272,7 +268,7 @@ const ProductDetails: React.FC = () => {
 
       </div>
 
-      {/* PAYMENT MODAL (Same Logic) */}
+      {/* PAYMENT MODAL */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl scale-100 flex flex-col max-h-[90vh]">
