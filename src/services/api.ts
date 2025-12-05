@@ -1,4 +1,4 @@
-import { Product, Order, User, AuthResponse } from '../types';
+import { Product, Order, User, AuthResponse, Review } from '../types';
 import { supabase } from '../supabaseClient';
 
 export const api = {
@@ -38,25 +38,6 @@ export const api = {
         },
         token: authData.session?.access_token
       };
-    }
-  },
-
-  // NEW: STORAGE (Image Upload)
-  storage: {
-    uploadImage: async (file: File): Promise<string> => {
-        const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
-        const { data, error } = await supabase.storage
-            .from('images')
-            .upload(fileName, file);
-        
-        if (error) throw error;
-
-        // Get Public URL
-        const { data: publicUrlData } = supabase.storage
-            .from('images')
-            .getPublicUrl(fileName);
-            
-        return publicUrlData.publicUrl;
     }
   },
 
@@ -103,7 +84,6 @@ export const api = {
       if (product.images && product.images.length > 0) {
           updateData.image = product.images[0];
       }
-
       const { data, error } = await supabase.from('products').update(updateData).eq('id', id).select().single();
       if (error) throw error;
       return data;
@@ -115,11 +95,32 @@ export const api = {
     }
   },
 
+  // NEW: REVIEWS API
+  reviews: {
+    getByProduct: async (productId: string): Promise<Review[]> => {
+        const { data, error } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('product_id', productId)
+            .order('created_at', { ascending: false });
+        if (error) return [];
+        return data as Review[];
+    },
+    create: async (review: Omit<Review, 'id' | 'created_at'>): Promise<Review> => {
+        const { data, error } = await supabase
+            .from('reviews')
+            .insert([review])
+            .select()
+            .single();
+        if (error) throw error;
+        return data as Review;
+    }
+  },
+
   // ORDERS
   orders: {
     create: async (orderData: any): Promise<Order> => {
       const summaryText = orderData.items.map((i: any) => `${i.quantity || 1}x ${i.name}`).join(', ');
-
       const { data, error } = await supabase.from('orders').insert([{
           user_email: orderData.userEmail || 'guest@example.com',
           customer_name: orderData.customerName,
@@ -168,6 +169,17 @@ export const api = {
         const { data, error } = await supabase.from('categories').insert([{ name }]).select().single();
         if (error) throw error;
         return data.name;
+    }
+  },
+  
+  // STORAGE
+  storage: {
+    uploadImage: async (file: File): Promise<string> => {
+        const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+        const { data, error } = await supabase.storage.from('images').upload(fileName, file);
+        if (error) throw error;
+        const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(fileName);
+        return publicUrlData.publicUrl;
     }
   }
 };

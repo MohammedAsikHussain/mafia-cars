@@ -45,10 +45,19 @@ export interface AuthResponse {
   token: string;
 }
 
-// --- THIS WAS MISSING ---
 export enum SortOption {
   Relevance = 'relevance',
   PriceLowHigh = 'price-low-high',
   PriceHighLow = 'price-high-low',
   Newest = 'newest',
+}
+
+// NEW: Review Type
+export interface Review {
+  id: string;
+  product_id: string;
+  user_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
 }
