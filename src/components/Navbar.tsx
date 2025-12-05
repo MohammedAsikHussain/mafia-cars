@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, Search, User, Menu, X, Camera, Mail, Lock, KeyRound, LogOut } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { analyzeImageForSearch } from '../services/geminiService';
