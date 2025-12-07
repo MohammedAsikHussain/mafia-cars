@@ -5,6 +5,7 @@ export const CATEGORIES = [
   "All",
   "Gear Knobs",
   "DRL Lights",
+  "Bar Lights",
   "Mobile Holders",
   "Steerings",
   "Dashboard Wax",
